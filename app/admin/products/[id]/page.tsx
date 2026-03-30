@@ -1,0 +1,40 @@
+import { requireAdmin } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import AdminProductEditForm from "../productsEditForm";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ id: string }> };
+
+export default async function AdminProductEditPage({ params }: Params) {
+  await requireAdmin();
+
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  const { data: product, error } = await supabase
+    .from("products")
+    .select("id, name, description, price, category, stock, images")
+    .eq("id", id)
+    .single();
+
+  if (error || !product) {
+    notFound();
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center gap-4">
+        <Link
+          href="/admin/products"
+          className="text-slate-600 hover:text-slate-900"
+        >
+          ← Natrag na artikle
+        </Link>
+      </div>
+      <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">Uredi artikl: {product.name}</h2>
+      <AdminProductEditForm product={product} />
+    </div>
+  );
+}
