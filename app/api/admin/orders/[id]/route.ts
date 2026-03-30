@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Params) {
   await requireAdmin();
   const supabase = await createSupabaseServerClient();
-  const { id } = params;
+  const { id } = await params;
 
   const body = await request.json();
   const { status } = body as { status?: string };
