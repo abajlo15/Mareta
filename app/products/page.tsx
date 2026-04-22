@@ -32,9 +32,9 @@ export default function ProductsPage() {
       setProducts(data);
       setFilteredProducts(data);
       
-      // Extract unique categories
+      // Extract unique collections from array values
       const uniqueCategories = Array.from(
-        new Set(data.map((p) => p.category).filter((c): c is string => c !== null))
+        new Set(data.flatMap((p) => p.categories ?? []))
       );
       setCategories(uniqueCategories);
     } catch (error) {
@@ -57,7 +57,7 @@ export default function ProductsPage() {
     }
 
     if (category) {
-      filtered = filtered.filter((p) => p.category === category);
+      filtered = filtered.filter((p) => (p.categories ?? []).includes(category));
     }
 
     if (minPrice) {

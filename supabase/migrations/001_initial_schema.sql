@@ -8,12 +8,25 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   price NUMERIC(10, 2) NOT NULL,
   images TEXT[] DEFAULT '{}',
-  category TEXT,
+  categories TEXT[] NOT NULL DEFAULT '{}',
+  subcollection_id UUID,
   stock INTEGER DEFAULT 0,
   instagram_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS subcollections (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE products
+  ADD CONSTRAINT products_subcollection_id_fkey
+  FOREIGN KEY (subcollection_id)
+  REFERENCES subcollections(id)
+  ON DELETE SET NULL;
 
 -- Orders table
 CREATE TABLE IF NOT EXISTS orders (
@@ -52,10 +65,12 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
-CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_categories ON products USING GIN(categories);
+CREATE INDEX IF NOT EXISTS idx_products_subcollection_id ON products(subcollection_id);
 
 -- Enable Row Level Security
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subcollections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -64,6 +79,15 @@ ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Products are viewable by everyone"
   ON products FOR SELECT
   USING (true);
+
+CREATE POLICY "Subcollections are viewable by everyone"
+  ON subcollections FOR SELECT
+  USING (true);
+
+CREATE POLICY "Authenticated users can create subcollections"
+  ON subcollections FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
 
 -- RLS Policies for orders (users can only see their own orders)
 CREATE POLICY "Users can view their own orders"

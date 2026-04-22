@@ -11,11 +11,12 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, price, category, stock, images } = body as {
+    const { name, description, price, categories, subcollectionId, stock, images } = body as {
       name?: string;
       description?: string | null;
       price?: number;
-      category?: string | null;
+      categories?: string[];
+      subcollectionId?: string | null;
       stock?: number;
       images?: string[];
     };
@@ -35,7 +36,8 @@ export async function PATCH(request: Request, { params }: Params) {
         name,
         description: description ?? null,
         price,
-        category: category || null,
+        categories: Array.isArray(categories) ? categories : [],
+        subcollection_id: subcollectionId || null,
         stock: stockValue,
         images: Array.isArray(images) ? images : [],
       })

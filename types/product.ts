@@ -4,7 +4,8 @@ export interface Product {
   description: string | null;
   price: number;
   images: string[];
-  category: string | null;
+  categories: string[];
+  subcollection_id: string | null;
   stock: number;
   instagram_url: string | null;
   created_at: string;
@@ -16,7 +17,8 @@ export interface ProductInsert {
   description?: string | null;
   price: number;
   images?: string[];
-  category?: string | null;
+  categories?: string[];
+  subcollection_id?: string | null;
   stock?: number;
   instagram_url?: string | null;
 }
@@ -26,7 +28,8 @@ export interface ProductUpdate {
   description?: string | null;
   price?: number;
   images?: string[];
-  category?: string | null;
+  categories?: string[];
+  subcollection_id?: string | null;
   stock?: number;
   instagram_url?: string | null;
 }

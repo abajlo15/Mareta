@@ -113,8 +113,8 @@ export default function ProductDetailPage() {
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-4 break-words">{product.name}</h1>
-          {product.category && (
-            <p className="text-gray-600 mb-4">Kategorija: {product.category}</p>
+          {product.categories?.length && (
+            <p className="text-gray-600 mb-4">Kolekcija: {product.categories.join(", ")}</p>
           )}
           <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 text-transparent bg-clip-text mb-4">
             {product.price.toFixed(2)} €

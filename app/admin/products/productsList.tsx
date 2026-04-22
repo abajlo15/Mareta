@@ -5,7 +5,8 @@ type Product = {
   name: string;
   description: string | null;
   price: number;
-  category?: string | null;
+  categories?: string[] | null;
+  subcollection?: { name: string } | null;
   stock?: number;
   images?: string[] | null;
 };
@@ -22,7 +23,8 @@ export default function AdminProductsList({ products }: { products: Product[] })
           <tr>
             <th className="px-4 py-2 text-left">Slika</th>
             <th className="px-4 py-2 text-left">Naziv</th>
-            <th className="px-4 py-2 text-left">Kategorija</th>
+            <th className="px-4 py-2 text-left">Kolekcija</th>
+            <th className="px-4 py-2 text-left">Podkolekcija</th>
             <th className="px-4 py-2 text-left">Opis</th>
             <th className="px-4 py-2 text-right">Zaliha</th>
             <th className="px-4 py-2 text-right">Cijena</th>
@@ -45,7 +47,10 @@ export default function AdminProductsList({ products }: { products: Product[] })
               </td>
               <td className="px-4 py-2">{p.name}</td>
               <td className="px-4 py-2 text-slate-600">
-                {p.category || "-"}
+                {p.categories?.length ? p.categories.join(", ") : "-"}
+              </td>
+              <td className="px-4 py-2 text-slate-600">
+                {p.subcollection?.name || "-"}
               </td>
               <td className="px-4 py-2 text-slate-600">
                 {p.description || "-"}

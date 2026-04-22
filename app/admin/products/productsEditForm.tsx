@@ -8,25 +8,36 @@ type Product = {
   name: string;
   description: string | null;
   price: number;
-  category?: string | null;
+  categories?: string[] | null;
+  subcollection_id?: string | null;
   stock?: number;
   images?: string[] | null;
 };
 
-export default function AdminProductEditForm({ product }: { product: Product }) {
+type Subcollection = {
+  id: string;
+  name: string;
+};
+
+export default function AdminProductEditForm({
+  product,
+  subcollections,
+}: {
+  product: Product;
+  subcollections: Subcollection[];
+}) {
   const router = useRouter();
+  const COLLECTIONS = ["Muška kolekcija", "Ženska kolekcija"];
+
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState<string>(String(product.price));
-  const [category, setCategory] = useState(product.category ?? "");
+  const [selectedCollections, setSelectedCollections] = useState<string[]>(
+    product.categories ?? []
+  );
+  const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
   const [images, setImages] = useState<string[]>(product.images ?? []);
-
-  const CATEGORIES = [
-    { value: "", label: "— Odaberi kategoriju —" },
-    { value: "Muške naočale", label: "Muške naočale" },
-    { value: "Ženske naočale", label: "Ženske naočale" },
-  ];
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -37,7 +48,8 @@ export default function AdminProductEditForm({ product }: { product: Product }) 
     setName(product.name);
     setDescription(product.description ?? "");
     setPrice(String(product.price));
-    setCategory(product.category ?? "");
+    setSelectedCollections(product.categories ?? []);
+    setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
     setImages(product.images ?? []);
   }, [product]);
@@ -81,6 +93,14 @@ export default function AdminProductEditForm({ product }: { product: Product }) 
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function toggleCollection(collection: string) {
+    setSelectedCollections((prev) =>
+      prev.includes(collection)
+        ? prev.filter((item) => item !== collection)
+        : [...prev, collection]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -93,7 +113,8 @@ export default function AdminProductEditForm({ product }: { product: Product }) 
         name,
         description: description || null,
         price: parseFloat(price),
-        category: category || null,
+        categories: selectedCollections,
+        subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         images,
       }),
@@ -156,15 +177,32 @@ export default function AdminProductEditForm({ product }: { product: Product }) 
       />
 
       <div>
-        <label className="block text-sm font-medium mb-1">Kategorija</label>
+        <p className="block text-sm font-medium mb-2">Kolekcije</p>
+        <div className="space-y-2">
+          {COLLECTIONS.map((collection) => (
+            <label key={collection} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={selectedCollections.includes(collection)}
+                onChange={() => toggleCollection(collection)}
+              />
+              <span>{collection}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Podkolekcija</label>
         <select
           className="w-full border border-slate-300 rounded px-3 py-2"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          value={subcollectionId}
+          onChange={(e) => setSubcollectionId(e.target.value)}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c.value || "empty"} value={c.value}>
-              {c.label}
+          <option value="">— Bez podkolekcije —</option>
+          {subcollections.map((subcollection) => (
+            <option key={subcollection.id} value={subcollection.id}>
+              {subcollection.name}
             </option>
           ))}
         </select>

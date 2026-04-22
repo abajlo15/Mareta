@@ -2,19 +2,25 @@
 
 import { useState, useRef } from "react";
 
-export default function AdminProductsForm() {
+type Subcollection = {
+  id: string;
+  name: string;
+};
+
+export default function AdminProductsForm({
+  subcollections,
+}: {
+  subcollections: Subcollection[];
+}) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<string>("");
-  const [category, setCategory] = useState<string>("");
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [subcollectionId, setSubcollectionId] = useState<string>("");
   const [stock, setStock] = useState<string>("0");
   const [images, setImages] = useState<string[]>([]);
 
-  const CATEGORIES = [
-    { value: "", label: "— Odaberi kategoriju —" },
-    { value: "Muške naočale", label: "Muške naočale" },
-    { value: "Ženske naočale", label: "Ženske naočale" },
-  ];
+  const COLLECTIONS = ["Muška kolekcija", "Ženska kolekcija"];
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -60,6 +66,14 @@ export default function AdminProductsForm() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function toggleCollection(collection: string) {
+    setSelectedCollections((prev) =>
+      prev.includes(collection)
+        ? prev.filter((item) => item !== collection)
+        : [...prev, collection]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -72,7 +86,8 @@ export default function AdminProductsForm() {
         name,
         description,
         price: parseFloat(price),
-        category: category || null,
+        categories: selectedCollections,
+        subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         images,
       }),
@@ -89,7 +104,8 @@ export default function AdminProductsForm() {
     setName("");
     setDescription("");
     setPrice("");
-    setCategory("");
+    setSelectedCollections([]);
+    setSubcollectionId("");
     setStock("0");
     setImages([]);
 
@@ -141,15 +157,32 @@ export default function AdminProductsForm() {
       />
 
       <div>
-        <label className="block text-sm font-medium mb-1">Kategorija</label>
+        <p className="block text-sm font-medium mb-2">Kolekcije</p>
+        <div className="space-y-2">
+          {COLLECTIONS.map((collection) => (
+            <label key={collection} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={selectedCollections.includes(collection)}
+                onChange={() => toggleCollection(collection)}
+              />
+              <span>{collection}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Podkolekcija</label>
         <select
           className="w-full border border-slate-300 rounded px-3 py-2"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          value={subcollectionId}
+          onChange={(e) => setSubcollectionId(e.target.value)}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c.value || "empty"} value={c.value}>
-              {c.label}
+          <option value="">— Bez podkolekcije —</option>
+          {subcollections.map((subcollection) => (
+            <option key={subcollection.id} value={subcollection.id}>
+              {subcollection.name}
             </option>
           ))}
         </select>

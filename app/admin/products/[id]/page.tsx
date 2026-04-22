@@ -15,9 +15,13 @@ export default async function AdminProductEditPage({ params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name, description, price, category, stock, images")
+    .select("id, name, description, price, categories, subcollection_id, stock, images")
     .eq("id", id)
     .single();
+  const { data: subcollections } = await supabase
+    .from("subcollections")
+    .select("id, name")
+    .order("name", { ascending: true });
 
   if (error || !product) {
     notFound();
@@ -34,7 +38,7 @@ export default async function AdminProductEditPage({ params }: Params) {
         </Link>
       </div>
       <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">Uredi artikl: {product.name}</h2>
-      <AdminProductEditForm product={product} />
+      <AdminProductEditForm product={product} subcollections={subcollections ?? []} />
     </div>
   );
 }

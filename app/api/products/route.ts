@@ -7,7 +7,8 @@ const productSchema = z.object({
   description: z.string().optional().nullable(),
   price: z.number().positive(),
   images: z.array(z.string()).optional().default([]),
-  category: z.string().optional().nullable(),
+  categories: z.array(z.string()).optional().default([]),
+  subcollection_id: z.string().uuid().optional().nullable(),
   stock: z.number().int().nonnegative().optional().default(0),
   instagram_url: z.string().url().optional().nullable(),
 });
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      query = query.eq('category', category);
+      query = query.contains('categories', [category]);
     }
 
     if (minPrice) {

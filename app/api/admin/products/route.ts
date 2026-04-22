@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price, category, stock, images")
+    .select("id, name, description, price, categories, subcollection_id, stock, images")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -23,11 +23,12 @@ export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
 
   const body = await request.json();
-  const { name, description, price, category, stock, images } = body as {
+  const { name, description, price, categories, subcollectionId, stock, images } = body as {
     name?: string;
     description?: string;
     price?: number;
-    category?: string | null;
+    categories?: string[];
+    subcollectionId?: string | null;
     stock?: number;
     images?: string[];
   };
@@ -45,7 +46,8 @@ export async function POST(request: Request) {
     name,
     description,
     price,
-    category: category || null,
+    categories: Array.isArray(categories) ? categories : [],
+    subcollection_id: subcollectionId || null,
     stock: stockValue,
     images: Array.isArray(images) ? images : [],
   });
