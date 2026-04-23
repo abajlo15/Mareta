@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import SearchBar from '@/components/SearchBar';
@@ -20,7 +20,7 @@ const normalizeCategoryLabel = (value: string) =>
 const includesAnyKeyword = (categories: string[], keywords: string[]) =>
   categories.some((category) => keywords.some((keyword) => category.includes(keyword)));
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
@@ -190,6 +190,22 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <p className="text-lg">Učitavanje proizvoda...</p>
+          </div>
+        </div>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
   );
 }
 
