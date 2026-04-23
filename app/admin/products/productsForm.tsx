@@ -18,6 +18,7 @@ export default function AdminProductsForm({
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [subcollectionId, setSubcollectionId] = useState<string>("");
   const [stock, setStock] = useState<string>("0");
+  const [isPolarized, setIsPolarized] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
 
   const COLLECTIONS = ["Muška kolekcija", "Ženska kolekcija"];
@@ -89,6 +90,7 @@ export default function AdminProductsForm({
         categories: selectedCollections,
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
+        isPolarized,
         images,
       }),
     });
@@ -107,6 +109,7 @@ export default function AdminProductsForm({
     setSelectedCollections([]);
     setSubcollectionId("");
     setStock("0");
+    setIsPolarized(false);
     setImages([]);
 
     window.location.reload();
@@ -155,6 +158,28 @@ export default function AdminProductsForm({
         value={stock}
         onChange={(e) => setStock(e.target.value)}
       />
+
+      <div>
+        <p className="block text-sm font-medium mb-2">Polarizirano</p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPolarized === true}
+              onChange={() => setIsPolarized(true)}
+            />
+            <span>DA</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPolarized === false}
+              onChange={() => setIsPolarized(false)}
+            />
+            <span>NE</span>
+          </label>
+        </div>
+      </div>
 
       <div>
         <p className="block text-sm font-medium mb-2">Kolekcije</p>

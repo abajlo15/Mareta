@@ -7,6 +7,7 @@ export interface Product {
   categories: string[];
   subcollection_id: string | null;
   stock: number;
+  is_polarized: boolean;
   instagram_url: string | null;
   created_at: string;
   updated_at: string;
@@ -20,6 +21,7 @@ export interface ProductInsert {
   categories?: string[];
   subcollection_id?: string | null;
   stock?: number;
+  is_polarized?: boolean;
   instagram_url?: string | null;
 }
 
@@ -31,6 +33,7 @@ export interface ProductUpdate {
   categories?: string[];
   subcollection_id?: string | null;
   stock?: number;
+  is_polarized?: boolean;
   instagram_url?: string | null;
 }
 

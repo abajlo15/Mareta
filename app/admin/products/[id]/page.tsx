@@ -15,7 +15,7 @@ export default async function AdminProductEditPage({ params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name, description, price, categories, subcollection_id, stock, images")
+    .select("id, name, description, price, categories, subcollection_id, stock, is_polarized, images")
     .eq("id", id)
     .single();
   const { data: subcollections } = await supabase

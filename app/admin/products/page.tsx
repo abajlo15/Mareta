@@ -15,6 +15,7 @@ type ProductRow = {
   subcollection_id?: string | null;
   subcollection?: { name: string }[] | { name: string } | null;
   stock?: number;
+  is_polarized?: boolean;
   images?: string[] | null;
 };
 
@@ -24,7 +25,7 @@ export default async function AdminProductsPage() {
   const supabase = await createSupabaseServerClient();
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, description, price, categories, subcollection_id, subcollection:subcollections(name), stock, images")
+    .select("id, name, description, price, categories, subcollection_id, subcollection:subcollections(name), stock, is_polarized, images")
     .order("created_at", { ascending: false });
   const { data: subcollections } = await supabase
     .from("subcollections")

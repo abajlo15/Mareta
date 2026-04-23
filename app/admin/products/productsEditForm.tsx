@@ -11,6 +11,7 @@ type Product = {
   categories?: string[] | null;
   subcollection_id?: string | null;
   stock?: number;
+  is_polarized?: boolean;
   images?: string[] | null;
 };
 
@@ -37,6 +38,7 @@ export default function AdminProductEditForm({
   );
   const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
+  const [isPolarized, setIsPolarized] = useState<boolean>(product.is_polarized ?? false);
   const [images, setImages] = useState<string[]>(product.images ?? []);
 
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,7 @@ export default function AdminProductEditForm({
     setSelectedCollections(product.categories ?? []);
     setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
+    setIsPolarized(product.is_polarized ?? false);
     setImages(product.images ?? []);
   }, [product]);
 
@@ -116,6 +119,7 @@ export default function AdminProductEditForm({
         categories: selectedCollections,
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
+        isPolarized,
         images,
       }),
     });
@@ -175,6 +179,28 @@ export default function AdminProductEditForm({
         value={stock}
         onChange={(e) => setStock(e.target.value)}
       />
+
+      <div>
+        <p className="block text-sm font-medium mb-2">Polarizirano</p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPolarized === true}
+              onChange={() => setIsPolarized(true)}
+            />
+            <span>DA</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPolarized === false}
+              onChange={() => setIsPolarized(false)}
+            />
+            <span>NE</span>
+          </label>
+        </div>
+      </div>
 
       <div>
         <p className="block text-sm font-medium mb-2">Kolekcije</p>
