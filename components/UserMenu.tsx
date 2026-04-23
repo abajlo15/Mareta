@@ -87,7 +87,7 @@ export default function UserMenu() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-fit">
       <button
         onClick={() => setShowMenu(!showMenu)}
         className="flex items-center space-x-2 focus:outline-none"
@@ -102,7 +102,7 @@ export default function UserMenu() {
             className="fixed inset-0 z-10"
             onClick={() => setShowMenu(false)}
           ></div>
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+          <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-md shadow-lg py-1 z-20">
             <div className="px-4 py-2 border-b">
               <p className="text-sm font-medium text-gray-900 truncate" title={user.email ?? ''}>
                 {username}

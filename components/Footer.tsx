@@ -90,6 +90,11 @@ export default function Footer() {
                   Reklamacije
                 </Link>
               </li>
+              <li>
+                <Link href="/politika-privatnosti" className="hover:text-primary-400 transition">
+                  Politika privatnosti
+                </Link>
+              </li>
               {/* Dodaj više linkova po potrebi */}
             </ul>
           </div>

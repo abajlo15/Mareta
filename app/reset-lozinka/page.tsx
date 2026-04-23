@@ -36,7 +36,9 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      setSuccess('Lozinka je uspjesno promijenjena. Preusmjeravamo vas na prijavu...');
+      // Nakon reseta korisnik mora ponovno uci s novom lozinkom.
+      await supabase.auth.signOut();
+      setSuccess('Lozinka je uspjesno promijenjena. Prijavite se novom lozinkom.');
       setTimeout(() => router.push('/login'), 1200);
     } finally {
       setLoading(false);
