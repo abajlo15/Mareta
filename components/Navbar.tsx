@@ -94,7 +94,7 @@ export default function Navbar() {
                 Kontakt
               </Link>
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <div className="flex items-center justify-center md:justify-start gap-4">
+                <div className="order-2 md:order-1 flex items-center justify-center md:justify-start gap-4">
                   <Link
                     href="/favorites"
                     aria-label="Favoriti"
@@ -151,7 +151,9 @@ export default function Navbar() {
                     </svg>
                   </Link>
                 </div>
-                <UserMenu />
+                <div className="order-1 md:order-2">
+                  <UserMenu onNavigate={() => setMenuOpen(false)} mobile />
+                </div>
               </div>
             </div>
           </div>

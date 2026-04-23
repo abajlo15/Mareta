@@ -6,7 +6,13 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-export default function UserMenu() {
+export default function UserMenu({
+  onNavigate,
+  mobile = false,
+}: {
+  onNavigate?: () => void;
+  mobile?: boolean;
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [user, setUser] = useState<User | null>(null);
@@ -79,7 +85,10 @@ export default function UserMenu() {
     return (
       <Link
         href="/login"
-        className="px-5 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-500 hover:to-primary-600 transition-all duration-200 shadow-elegant font-medium"
+        onClick={onNavigate}
+        className={`px-5 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-500 hover:to-primary-600 transition-all duration-200 shadow-elegant font-medium ${
+          mobile ? 'w-full text-center md:w-auto' : ''
+        }`}
       >
         Prijava
       </Link>
@@ -87,10 +96,10 @@ export default function UserMenu() {
   }
 
   return (
-    <div className="relative w-fit">
+    <div className={`relative ${mobile ? 'w-full md:w-fit' : 'w-fit'}`}>
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="flex items-center space-x-2 focus:outline-none"
+        className={`flex items-center space-x-2 focus:outline-none ${mobile ? 'w-full justify-center md:w-auto md:justify-start' : ''}`}
       >
         <div className="w-10 h-10 bg-gradient-to-br from-primary-500 via-accent-500 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold shadow-elegant">
           {user.email?.charAt(0).toUpperCase()}
@@ -102,7 +111,11 @@ export default function UserMenu() {
             className="fixed inset-0 z-10"
             onClick={() => setShowMenu(false)}
           ></div>
-          <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-md shadow-lg py-1 z-20">
+          <div
+            className={`absolute mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-md shadow-lg py-1 z-20 ${
+              mobile ? 'left-1/2 -translate-x-1/2' : 'left-0 md:left-auto md:right-0'
+            }`}
+          >
             <div className="px-4 py-2 border-b">
               <p className="text-sm font-medium text-gray-900 truncate" title={user.email ?? ''}>
                 {username}
@@ -111,14 +124,20 @@ export default function UserMenu() {
             <Link
               href="/profil"
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                setShowMenu(false);
+                onNavigate?.();
+              }}
             >
               Moj profil
             </Link>
             <Link
               href="/orders"
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                setShowMenu(false);
+                onNavigate?.();
+              }}
             >
               Moje narudžbe
             </Link>
@@ -126,7 +145,10 @@ export default function UserMenu() {
               <Link
                 href="/admin"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={() => setShowMenu(false)}
+                onClick={() => {
+                  setShowMenu(false);
+                  onNavigate?.();
+                }}
               >
                 Na admin panel
               </Link>
