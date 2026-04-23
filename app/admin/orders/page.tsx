@@ -29,10 +29,18 @@ export default async function AdminOrdersPage() {
     `)
     .order("created_at", { ascending: false });
 
+  const normalizedOrders = (orders ?? []).map((order) => ({
+    ...order,
+    order_items: (order.order_items ?? []).map((item) => ({
+      ...item,
+      product: Array.isArray(item.product) ? (item.product[0] ?? null) : (item.product ?? null),
+    })),
+  }));
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl sm:text-2xl font-semibold">Narudžbe</h2>
-      <AdminOrdersClient orders={orders ?? []} />
+      <AdminOrdersClient orders={normalizedOrders} />
     </div>
   );
 }
