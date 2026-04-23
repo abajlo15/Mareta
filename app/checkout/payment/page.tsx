@@ -9,7 +9,7 @@ import type { OrderWithItems } from '@/types/order';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-function CheckoutForm({ orderId, amount }: { orderId: string; amount: number }) {
+function CheckoutForm({ orderId, amount, isGuest }: { orderId: string; amount: number; isGuest: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -75,6 +75,7 @@ function CheckoutForm({ orderId, amount }: { orderId: string; amount: number }) 
           body: JSON.stringify({
             orderId,
             paymentIntentId: paymentIntent.id,
+            guest: isGuest,
           }),
         });
 
@@ -127,16 +128,30 @@ function PaymentPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get('orderId');
+  const isGuest = searchParams.get('guest') === '1';
+  const guestAmountParam = searchParams.get('amount');
   const [order, setOrder] = useState<OrderWithItems | null>(null);
+  const [guestAmount, setGuestAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isGuest) {
+      const parsedAmount = Number(guestAmountParam);
+      if (orderId && Number.isFinite(parsedAmount) && parsedAmount > 0) {
+        setGuestAmount(parsedAmount);
+        setLoading(false);
+      } else {
+        router.push('/checkout?guest=1');
+      }
+      return;
+    }
+
     if (orderId) {
       loadOrder(orderId);
     } else {
       router.push('/checkout');
     }
-  }, [orderId, router]);
+  }, [orderId, router, isGuest, guestAmountParam]);
 
   const loadOrder = async (id: string) => {
     try {
@@ -149,7 +164,7 @@ function PaymentPageContent() {
     }
   };
 
-  if (loading || !order) {
+  if (loading || (!isGuest && !order) || (isGuest && (!orderId || guestAmount === null))) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
@@ -159,20 +174,23 @@ function PaymentPageContent() {
     );
   }
 
+  const amountToPay = isGuest ? guestAmount! : order!.total_amount;
+  const orderIdToShow = orderId ?? order!.id;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">Plaćanje</h1>
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="mb-6">
           <p className="text-lg font-semibold mb-2">
-            Ukupno za plaćanje: {order.total_amount.toFixed(2)} €
+            Ukupno za plaćanje: {amountToPay.toFixed(2)} €
           </p>
           <p className="text-sm text-gray-600">
-            Narudžba #{order.id.slice(0, 8)}
+            Narudžba #{orderIdToShow.slice(0, 8)}
           </p>
         </div>
         <Elements stripe={stripePromise}>
-          <CheckoutForm orderId={order.id} amount={order.total_amount} />
+          <CheckoutForm orderId={orderIdToShow} amount={amountToPay} isGuest={isGuest} />
         </Elements>
       </div>
     </div>

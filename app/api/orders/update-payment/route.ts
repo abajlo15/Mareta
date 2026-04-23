@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
-    const { orderId, paymentIntentId } = body;
+    const { orderId, paymentIntentId } = body as {
+      orderId?: string;
+      paymentIntentId?: string;
+      guest?: boolean;
+    };
 
     if (!orderId || !paymentIntentId) {
       return NextResponse.json(
@@ -23,15 +23,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update order with payment intent ID and status
-    const { error } = await supabase
+    let query = supabase
       .from('orders')
       .update({
         payment_intent_id: paymentIntentId,
         status: 'paid',
       })
-      .eq('id', orderId)
-      .eq('user_id', user.id); // Ensure user owns the order
+      .eq('id', orderId);
+
+    if (user) {
+      query = query.eq('user_id', user.id); // user owns order
+    } else {
+      query = query.is('user_id', null); // guest order
+    }
+
+    const { error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

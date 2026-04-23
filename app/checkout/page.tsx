@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +29,7 @@ const checkoutSchema = z.object({
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isGuestCheckout = searchParams.get('guest') === '1';
@@ -104,7 +104,8 @@ export default function CheckoutPage() {
       clearCart();
 
       if (paymentMethod === 'card') {
-        router.push(`/checkout/payment?orderId=${order.id}`);
+        const guestQuery = isGuestCheckout ? '&guest=1' : '';
+        router.push(`/checkout/payment?orderId=${order.id}&amount=${order.total_amount}${guestQuery}`);
       } else {
         router.push(`/checkout/success?orderId=${order.id}&paymentMethod=cash_on_delivery`);
       }
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
             )}
             {isGuestCheckout && (
               <div className="bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded text-sm">
-                Nastavljate kao gost. Za gost narudzbu dostupno je placanje pouzecem.
+                Nastavljate kao gost. Odaberite nacin placanja i dovrsite narudzbu bez registracije.
               </div>
             )}
 
@@ -270,7 +271,6 @@ export default function CheckoutPage() {
                       name="payment-method"
                       value="card"
                       checked={paymentMethod === 'card'}
-                      disabled={isGuestCheckout}
                       onChange={() => setPaymentMethod('card')}
                     />
                     <span>Karticom</span>
@@ -329,6 +329,20 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <p className="text-lg">Učitavanje...</p>
+        </div>
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
 

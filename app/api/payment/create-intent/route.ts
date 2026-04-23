@@ -14,10 +14,6 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { amount, orderId } = body;
 
@@ -28,13 +24,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'Missing orderId' },
+        { status: 400 }
+      );
+    }
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id, user_id, total_amount')
+      .eq('id', orderId)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    const amountMatchesOrder = amount === Math.round(Number(order.total_amount) * 100);
+    if (!amountMatchesOrder) {
+      return NextResponse.json({ error: 'Amount does not match order total' }, { status: 400 });
+    }
+
+    const isGuestOrder = !order.user_id;
+    if (!user && !isGuestOrder) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (user && order.user_id && user.id !== order.user_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'eur',
       metadata: {
         orderId: orderId || '',
-        userId: user.id,
+        userId: user?.id ?? '',
       },
     });
 

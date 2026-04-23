@@ -40,10 +40,14 @@ export async function updateSession(request: NextRequest) {
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
   );
+  const isGuestCheckoutPath =
+    request.nextUrl.pathname.startsWith('/checkout') &&
+    request.nextUrl.searchParams.get('guest') === '1';
 
   if (
     !user &&
     isProtectedPath &&
+    !isGuestCheckoutPath &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/api/auth')
   ) {

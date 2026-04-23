@@ -68,15 +68,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = orderSchema.parse(body);
-    const isGuestCheckout = !user;
-
-    if (isGuestCheckout && validatedData.payment_method !== 'cash_on_delivery') {
-      return NextResponse.json(
-        { error: 'Gost narudzba trenutno podrzava samo placanje pouzecem.' },
-        { status: 400 }
-      );
-    }
-
     const subtotal = validatedData.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
