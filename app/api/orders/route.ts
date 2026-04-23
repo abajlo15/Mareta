@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import type { OrderInsert, OrderItemInsert } from '@/types/order';
+import { calculateOrderTotal } from '@/lib/pricing';
 
 const orderSchema = z.object({
   total_amount: z.number().positive(),
+  payment_method: z.enum(['card', 'cash_on_delivery']).default('card'),
   shipping_address: z.object({
     full_name: z.string(),
     email: z.string().email(),
@@ -64,20 +66,31 @@ export async function POST(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const validatedData = orderSchema.parse(body);
+    const isGuestCheckout = !user;
+
+    if (isGuestCheckout && validatedData.payment_method !== 'cash_on_delivery') {
+      return NextResponse.json(
+        { error: 'Gost narudzba trenutno podrzava samo placanje pouzecem.' },
+        { status: 400 }
+      );
+    }
+
+    const subtotal = validatedData.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const totalAmount = calculateOrderTotal(subtotal);
 
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([
         {
-          user_id: user.id,
-          total_amount: validatedData.total_amount,
+          user_id: user?.id ?? null,
+          total_amount: totalAmount,
+          payment_method: validatedData.payment_method,
           shipping_address: validatedData.shipping_address,
           payment_intent_id: validatedData.payment_intent_id,
           status: 'pending',

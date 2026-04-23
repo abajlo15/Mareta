@@ -18,6 +18,7 @@ export default function AdminProductsForm({
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [subcollectionId, setSubcollectionId] = useState<string>("");
   const [stock, setStock] = useState<string>("0");
+  const [discountPercentage, setDiscountPercentage] = useState<string>("0");
   const [isPolarized, setIsPolarized] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
 
@@ -87,6 +88,7 @@ export default function AdminProductsForm({
         name,
         description,
         price: parseFloat(price),
+        discountPercentage: Math.max(0, Math.min(100, parseInt(discountPercentage, 10) || 0)),
         categories: selectedCollections,
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
@@ -109,6 +111,7 @@ export default function AdminProductsForm({
     setSelectedCollections([]);
     setSubcollectionId("");
     setStock("0");
+    setDiscountPercentage("0");
     setIsPolarized(false);
     setImages([]);
 
@@ -139,25 +142,44 @@ export default function AdminProductsForm({
         onChange={(e) => setDescription(e.target.value)}
       />
 
-      <input
-        className="w-full border border-slate-300 rounded px-3 py-2"
-        type="number"
-        step="0.01"
-        min="0"
-        placeholder="Cijena (npr. 19.99)"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        required
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">Cijena</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Cijena (npr. 19.99)"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+      </div>
 
-      <input
-        className="w-full border border-slate-300 rounded px-3 py-2"
-        type="number"
-        min="0"
-        placeholder="Količina (zaliha)"
-        value={stock}
-        onChange={(e) => setStock(e.target.value)}
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">Količina</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          min="0"
+          placeholder="Količina (zaliha)"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Popust</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          min="0"
+          max="100"
+          placeholder="Popust u % (0-100)"
+          value={discountPercentage}
+          onChange={(e) => setDiscountPercentage(e.target.value)}
+        />
+      </div>
 
       <div>
         <p className="block text-sm font-medium mb-2">Polarizirano</p>

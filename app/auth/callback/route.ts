@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
   let next = searchParams.get("next") ?? "/";
 
   if (!next.startsWith("/")) {
@@ -26,7 +27,8 @@ export async function GET(request: Request) {
         (data.user.app_metadata?.role as string) === "admin";
       const isAdmin = roleFromProfile || roleFromMetadata;
 
-      const redirectPath = isAdmin ? "/admin" : next;
+      const isRecovery = type === "recovery";
+      const redirectPath = isRecovery ? next : isAdmin ? "/admin" : next;
       return NextResponse.redirect(`${origin}${redirectPath}`);
     }
   }

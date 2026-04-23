@@ -8,9 +8,20 @@ export interface Product {
   subcollection_id: string | null;
   stock: number;
   is_polarized: boolean;
+  discount_percentage: number;
   instagram_url: string | null;
   created_at: string;
   updated_at: string;
+  subcollection?:
+    | {
+        id: string;
+        name: string;
+      }
+    | {
+        id: string;
+        name: string;
+      }[]
+    | null;
 }
 
 export interface ProductInsert {
@@ -22,6 +33,7 @@ export interface ProductInsert {
   subcollection_id?: string | null;
   stock?: number;
   is_polarized?: boolean;
+  discount_percentage?: number;
   instagram_url?: string | null;
 }
 
@@ -34,6 +46,7 @@ export interface ProductUpdate {
   subcollection_id?: string | null;
   stock?: number;
   is_polarized?: boolean;
+  discount_percentage?: number;
   instagram_url?: string | null;
 }
 

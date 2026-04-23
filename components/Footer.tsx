@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export default function Footer() {
@@ -13,9 +14,18 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* O nama */}
           <div>
-            <h3 className="text-xl font-elegant font-bold mb-4 bg-gradient-to-r from-primary-400 via-accent-400 to-primary-500 text-transparent bg-clip-text">
-              Mareta
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <Image
+                src="/logo.jpg"
+                alt="Mareta logo"
+                width={34}
+                height={34}
+                className="rounded-full object-cover"
+              />
+              <h3 className="text-xl font-elegant font-bold bg-gradient-to-r from-primary-400 via-accent-400 to-primary-500 text-transparent bg-clip-text">
+                Mareta
+              </h3>
+            </div>
             <p className="text-gray-300 mb-4">
               Elegantne sunčane naočale za modernu ženu. Kvaliteta i stil u svakom komadu.
             </p>
@@ -63,6 +73,21 @@ export default function Footer() {
               <li>
                 <Link href="/o-nama" className="hover:text-primary-400 transition">
                   O nama
+                </Link>
+              </li>
+              <li>
+                <Link href="/zamjena-robe" className="hover:text-primary-400 transition">
+                  Zamjena robe
+                </Link>
+              </li>
+              <li>
+                <Link href="/besplatan-povrat" className="hover:text-primary-400 transition">
+                  Besplatan povrat
+                </Link>
+              </li>
+              <li>
+                <Link href="/reklamacije" className="hover:text-primary-400 transition">
+                  Reklamacije
                 </Link>
               </li>
               {/* Dodaj više linkova po potrebi */}

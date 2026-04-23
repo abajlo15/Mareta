@@ -10,7 +10,23 @@ export default async function AdminOrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, status, total_amount, created_at")
+    .select(`
+      id,
+      status,
+      total_amount,
+      created_at,
+      payment_method,
+      shipping_address,
+      order_items (
+        id,
+        quantity,
+        price,
+        product:products (
+          id,
+          name
+        )
+      )
+    `)
     .order("created_at", { ascending: false });
 
   return (

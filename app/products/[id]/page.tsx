@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { fetchProduct } from '@/lib/products';
 import { addToCart } from '@/lib/cart';
 import type { Product } from '@/types/product';
+import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -72,12 +73,20 @@ export default function ProductDetailPage() {
     ? product.images 
     : ['/placeholder.svg'];
   const mainImage = images[selectedImageIndex] || images[0];
+  const productHasDiscount = hasDiscount(product.discount_percentage);
+  const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
+  const discountPercentage = normalizeDiscountPercentage(product.discount_percentage);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <div className="relative w-full h-96 mb-4">
+            {productHasDiscount && (
+              <span className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-red-600 text-white text-sm font-bold shadow">
+                AKCIJA -{discountPercentage}%
+              </span>
+            )}
             <Image
               src={mainImage}
               alt={product.name}
@@ -116,9 +125,17 @@ export default function ProductDetailPage() {
           {product.categories?.length && (
             <p className="text-gray-600 mb-4">Kolekcija: {product.categories.join(", ")}</p>
           )}
-          <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 text-transparent bg-clip-text mb-4">
-            {product.price.toFixed(2)} €
-          </p>
+          <div className="mb-4">
+            {productHasDiscount && (
+              <p className="text-base text-gray-500 line-through">{product.price.toFixed(2)} €</p>
+            )}
+            <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-500 text-transparent bg-clip-text">
+              {(productHasDiscount ? discountedPrice : product.price).toFixed(2)} €
+            </p>
+            {productHasDiscount && (
+              <p className="text-sm font-semibold text-red-600">Popust -{discountPercentage}%</p>
+            )}
+          </div>
           {product.description && (
             <p className="text-gray-700 mb-6">{product.description}</p>
           )}

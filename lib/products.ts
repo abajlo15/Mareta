@@ -1,10 +1,13 @@
 import type { Product } from '@/types/product';
 
+export type Subcollection = {
+  id: string;
+  name: string;
+};
+
 export async function fetchProducts(filters?: {
   search?: string;
   category?: string;
-  minPrice?: number;
-  maxPrice?: number;
 }): Promise<Product[]> {
   try {
     const params = new URLSearchParams();
@@ -14,12 +17,6 @@ export async function fetchProducts(filters?: {
     }
     if (filters?.category) {
       params.append('category', filters.category);
-    }
-    if (filters?.minPrice !== undefined) {
-      params.append('minPrice', filters.minPrice.toString());
-    }
-    if (filters?.maxPrice !== undefined) {
-      params.append('maxPrice', filters.maxPrice.toString());
     }
 
     const baseUrl = typeof window !== 'undefined' 
@@ -42,6 +39,27 @@ export async function fetchProducts(filters?: {
   } catch (error) {
     console.error('Error fetching products:', error);
     // Return empty array instead of throwing
+    return [];
+  }
+}
+
+export async function fetchSubcollections(): Promise<Subcollection[]> {
+  try {
+    const baseUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    const response = await fetch(`${baseUrl}/api/subcollections`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
     return [];
   }
 }

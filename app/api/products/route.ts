@@ -10,6 +10,7 @@ const productSchema = z.object({
   categories: z.array(z.string()).optional().default([]),
   subcollection_id: z.string().uuid().optional().nullable(),
   stock: z.number().int().nonnegative().optional().default(0),
+  discount_percentage: z.number().int().min(0).max(100).optional().default(0),
   instagram_url: z.string().url().optional().nullable(),
 });
 
@@ -26,12 +27,10 @@ export async function GET(request: NextRequest) {
     
     const search = searchParams.get('search');
     const category = searchParams.get('category');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
 
     let query = supabase
       .from('products')
-      .select('*')
+      .select('*, subcollection:subcollections(id, name)')
       .order('created_at', { ascending: false });
 
     if (search) {
@@ -40,14 +39,6 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query = query.contains('categories', [category]);
-    }
-
-    if (minPrice) {
-      query = query.gte('price', parseFloat(minPrice));
-    }
-
-    if (maxPrice) {
-      query = query.lte('price', parseFloat(maxPrice));
     }
 
     const { data, error } = await query;

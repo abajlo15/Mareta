@@ -12,6 +12,7 @@ type Product = {
   subcollection_id?: string | null;
   stock?: number;
   is_polarized?: boolean;
+  discount_percentage?: number;
   images?: string[] | null;
 };
 
@@ -38,6 +39,9 @@ export default function AdminProductEditForm({
   );
   const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
+  const [discountPercentage, setDiscountPercentage] = useState<string>(
+    String(product.discount_percentage ?? 0)
+  );
   const [isPolarized, setIsPolarized] = useState<boolean>(product.is_polarized ?? false);
   const [images, setImages] = useState<string[]>(product.images ?? []);
 
@@ -53,6 +57,7 @@ export default function AdminProductEditForm({
     setSelectedCollections(product.categories ?? []);
     setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
+    setDiscountPercentage(String(product.discount_percentage ?? 0));
     setIsPolarized(product.is_polarized ?? false);
     setImages(product.images ?? []);
   }, [product]);
@@ -116,6 +121,7 @@ export default function AdminProductEditForm({
         name,
         description: description || null,
         price: parseFloat(price),
+        discountPercentage: Math.max(0, Math.min(100, parseInt(discountPercentage, 10) || 0)),
         categories: selectedCollections,
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
@@ -160,25 +166,44 @@ export default function AdminProductEditForm({
         onChange={(e) => setDescription(e.target.value)}
       />
 
-      <input
-        className="w-full border border-slate-300 rounded px-3 py-2"
-        type="number"
-        step="0.01"
-        min="0"
-        placeholder="Cijena (npr. 19.99)"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        required
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">Cijena</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Cijena (npr. 19.99)"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+      </div>
 
-      <input
-        className="w-full border border-slate-300 rounded px-3 py-2"
-        type="number"
-        min="0"
-        placeholder="Količina (zaliha)"
-        value={stock}
-        onChange={(e) => setStock(e.target.value)}
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">Količina</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          min="0"
+          placeholder="Količina (zaliha)"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Popust</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          type="number"
+          min="0"
+          max="100"
+          placeholder="Popust u % (0-100)"
+          value={discountPercentage}
+          onChange={(e) => setDiscountPercentage(e.target.value)}
+        />
+      </div>
 
       <div>
         <p className="block text-sm font-medium mb-2">Polarizirano</p>

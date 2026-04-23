@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price, categories, subcollection_id, stock, is_polarized, images")
+    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -23,10 +23,11 @@ export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
 
   const body = await request.json();
-  const { name, description, price, categories, subcollectionId, stock, isPolarized, images } = body as {
+  const { name, description, price, discountPercentage, categories, subcollectionId, stock, isPolarized, images } = body as {
     name?: string;
     description?: string;
     price?: number;
+    discountPercentage?: number;
     categories?: string[];
     subcollectionId?: string | null;
     stock?: number;
@@ -42,6 +43,10 @@ export async function POST(request: Request) {
   }
 
   const stockValue = typeof stock === "number" ? Math.max(0, stock) : 0;
+  const discountValue =
+    typeof discountPercentage === "number"
+      ? Math.min(100, Math.max(0, Math.round(discountPercentage)))
+      : 0;
 
   const { error } = await supabase.from("products").insert({
     name,
@@ -51,6 +56,7 @@ export async function POST(request: Request) {
     subcollection_id: subcollectionId || null,
     stock: stockValue,
     is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
+    discount_percentage: discountValue,
     images: Array.isArray(images) ? images : [],
   });
 

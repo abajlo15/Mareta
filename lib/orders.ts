@@ -33,6 +33,7 @@ export async function createOrder(orderData: {
     quantity: number;
     price: number;
   }>;
+  payment_method: 'card' | 'cash_on_delivery';
   payment_intent_id?: string;
 }): Promise<OrderWithItems> {
   const response = await fetch('/api/orders', {

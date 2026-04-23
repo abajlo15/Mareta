@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AdminLogoutButton from "./AdminLogoutButton";
 
 export default function AdminSidebar() {
@@ -40,10 +41,17 @@ export default function AdminSidebar() {
         <div>
           <Link
             href="/admin"
-            className="text-2xl font-bold tracking-tight block hover:text-slate-200"
+            className="text-2xl font-bold tracking-tight flex items-center gap-2 hover:text-slate-200"
             onClick={() => setOpen(false)}
           >
-            Mareta Admin
+            <Image
+              src="/logo.jpg"
+              alt="Mareta logo"
+              width={34}
+              height={34}
+              className="rounded-full object-cover"
+            />
+            <span>Mareta Admin</span>
           </Link>
           <p className="text-sm text-slate-300 mt-1">
             Upravljanje artiklima i narudžbama
@@ -65,6 +73,13 @@ export default function AdminSidebar() {
           >
             Narudžbe
           </a>
+          <Link
+            href="/"
+            className="block rounded px-3 py-2 hover:bg-slate-800"
+            onClick={() => setOpen(false)}
+          >
+            Vrati se na dućan
+          </Link>
         </nav>
 
         <AdminLogoutButton />

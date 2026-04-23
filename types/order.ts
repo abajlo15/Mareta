@@ -1,12 +1,14 @@
 export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+export type PaymentMethod = 'card' | 'cash_on_delivery';
 
 export interface Order {
   id: string;
-  user_id: string;
+  user_id: string | null;
   total_amount: number;
   status: OrderStatus;
   shipping_address: ShippingAddress | null;
   payment_intent_id: string | null;
+  payment_method: PaymentMethod;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +49,7 @@ export interface OrderInsert {
   status?: OrderStatus;
   shipping_address?: ShippingAddress | null;
   payment_intent_id?: string | null;
+  payment_method?: PaymentMethod;
 }
 
 export interface OrderItemInsert {

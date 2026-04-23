@@ -5,6 +5,7 @@ type Product = {
   name: string;
   description: string | null;
   price: number;
+  discount_percentage?: number;
   categories?: string[] | null;
   subcollection?: { name: string } | null;
   stock?: number;
@@ -28,6 +29,7 @@ export default function AdminProductsList({ products }: { products: Product[] })
             <th className="px-4 py-2 text-left">Opis</th>
             <th className="px-4 py-2 text-right">Zaliha</th>
             <th className="px-4 py-2 text-right">Cijena</th>
+            <th className="px-4 py-2 text-right">Popust</th>
             <th className="px-4 py-2 text-left">Akcije</th>
           </tr>
         </thead>
@@ -60,6 +62,9 @@ export default function AdminProductsList({ products }: { products: Product[] })
               </td>
               <td className="px-4 py-2 text-right">
                 {p.price.toFixed(2)}&nbsp;€
+              </td>
+              <td className="px-4 py-2 text-right">
+                {p.discount_percentage ? `-${p.discount_percentage}%` : "—"}
               </td>
               <td className="px-4 py-2">
                 <Link

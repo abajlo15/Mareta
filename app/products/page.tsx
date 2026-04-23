@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ProductGrid from '@/components/ProductGrid';
 import SearchBar from '@/components/SearchBar';
 import Filters from '@/components/Filters';
-import { fetchProducts } from '@/lib/products';
+import { fetchProducts, fetchSubcollections } from '@/lib/products';
 import type { Product } from '@/types/product';
 
 export default function ProductsPage() {
@@ -13,9 +13,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [subcollectionId, setSubcollectionId] = useState('');
+  const [subcollections, setSubcollections] = useState<{ id: string; name: string }[]>([]);
+  const [polarized, setPolarized] = useState<boolean | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -23,12 +24,15 @@ export default function ProductsPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [products, search, category, minPrice, maxPrice]);
+  }, [products, search, category, subcollectionId, polarized]);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await fetchProducts();
+      const [data, allSubcollections] = await Promise.all([
+        fetchProducts(),
+        fetchSubcollections(),
+      ]);
       setProducts(data);
       setFilteredProducts(data);
       
@@ -37,6 +41,7 @@ export default function ProductsPage() {
         new Set(data.flatMap((p) => p.categories ?? []))
       );
       setCategories(uniqueCategories);
+      setSubcollections(allSubcollections);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
@@ -60,18 +65,12 @@ export default function ProductsPage() {
       filtered = filtered.filter((p) => (p.categories ?? []).includes(category));
     }
 
-    if (minPrice) {
-      const min = parseFloat(minPrice);
-      if (!isNaN(min)) {
-        filtered = filtered.filter((p) => p.price >= min);
-      }
+    if (subcollectionId) {
+      filtered = filtered.filter((p) => p.subcollection_id === subcollectionId);
     }
 
-    if (maxPrice) {
-      const max = parseFloat(maxPrice);
-      if (!isNaN(max)) {
-        filtered = filtered.filter((p) => p.price <= max);
-      }
+    if (polarized !== null) {
+      filtered = filtered.filter((p) => p.is_polarized === polarized);
     }
 
     setFilteredProducts(filtered);
@@ -96,11 +95,12 @@ export default function ProductsPage() {
           <Filters
             category={category}
             onCategoryChange={setCategory}
-            minPrice={minPrice}
-            onMinPriceChange={setMinPrice}
-            maxPrice={maxPrice}
-            onMaxPriceChange={setMaxPrice}
             categories={categories}
+            subcollectionId={subcollectionId}
+            onSubcollectionChange={setSubcollectionId}
+            subcollections={subcollections}
+            polarized={polarized}
+            onPolarizedChange={setPolarized}
           />
         </div>
 

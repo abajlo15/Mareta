@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import type { CartItem as CartItemType } from '@/types/cart';
+import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
 
 interface CartItemProps {
   item: CartItemType;
@@ -13,6 +14,12 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
   const imageUrl = item.product.images && item.product.images.length > 0 
     ? item.product.images[0] 
     : '/placeholder.svg';
+  const itemHasDiscount = hasDiscount(item.product.discount_percentage);
+  const itemUnitPrice = calculateDiscountedPrice(
+    item.product.price,
+    item.product.discount_percentage
+  );
+  const discountPercentage = normalizeDiscountPercentage(item.product.discount_percentage);
 
   return (
     <div className="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-soft border border-gray-100">
@@ -27,7 +34,13 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
       </div>
       <div className="flex-1">
         <h3 className="font-semibold text-lg">{item.product.name}</h3>
-        <p className="text-gray-600 text-sm">{item.product.price.toFixed(2)} €</p>
+        {itemHasDiscount && (
+          <p className="text-gray-500 text-xs line-through">{item.product.price.toFixed(2)} €</p>
+        )}
+        <p className="text-gray-600 text-sm">{itemUnitPrice.toFixed(2)} €</p>
+        {itemHasDiscount && (
+          <p className="text-xs text-red-600 font-semibold">Popust -{discountPercentage}%</p>
+        )}
       </div>
       <div className="flex items-center space-x-2">
         <button
@@ -46,7 +59,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
       </div>
       <div className="text-right">
         <p className="font-semibold text-lg">
-          {(item.product.price * item.quantity).toFixed(2)} €
+          {(itemUnitPrice * item.quantity).toFixed(2)} €
         </p>
         <button
           onClick={() => onRemove(item.product.id)}

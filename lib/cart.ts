@@ -1,7 +1,9 @@
 import type { CartItem, Cart } from '@/types/cart';
 import type { Product } from '@/types/product';
+import { calculateDiscountedPrice } from './pricing';
 
 const CART_STORAGE_KEY = 'mareta_cart';
+const CART_UPDATED_EVENT = 'cartUpdated';
 
 export function getCart(): Cart {
   if (typeof window === 'undefined') {
@@ -15,7 +17,11 @@ export function getCart(): Cart {
     }
 
     const items: CartItem[] = JSON.parse(stored);
-    const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const total = items.reduce(
+      (sum, item) =>
+        sum + calculateDiscountedPrice(item.product.price, item.product.discount_percentage) * item.quantity,
+      0
+    );
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return { items, total, itemCount };
@@ -64,12 +70,30 @@ export function updateCartItemQuantity(productId: string, quantity: number): Car
 export function clearCart(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CART_STORAGE_KEY);
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT));
   }
 }
 
 function saveCart(items: CartItem[]): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT));
   }
+}
+
+export function subscribeToCartUpdate(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === CART_STORAGE_KEY) callback();
+  };
+
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(CART_UPDATED_EVENT, callback);
+
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(CART_UPDATED_EVENT, callback);
+  };
 }
 

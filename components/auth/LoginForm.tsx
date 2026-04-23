@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginForm() {
@@ -28,18 +29,7 @@ export default function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      const roleFromProfile = profile?.role === 'admin';
-      const roleFromMetadata =
-        (data.user.app_metadata?.role as string) === 'admin';
-
-      const isAdmin = roleFromProfile || roleFromMetadata;
-      router.push(isAdmin ? '/admin' : '/');
+      router.push('/');
       router.refresh();
     }
   };
@@ -97,6 +87,14 @@ export default function LoginForm() {
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
+        <div className="mt-2 text-right">
+          <Link
+            href="/zaboravljena-lozinka"
+            className="text-sm text-primary-600 hover:text-primary-500"
+          >
+            Zaboravljena lozinka?
+          </Link>
+        </div>
       </div>
       <button
         type="submit"

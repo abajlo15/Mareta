@@ -10,6 +10,7 @@ const productUpdateSchema = z.object({
   categories: z.array(z.string()).optional(),
   subcollection_id: z.string().uuid().optional().nullable(),
   stock: z.number().int().nonnegative().optional(),
+  discount_percentage: z.number().int().min(0).max(100).optional(),
   instagram_url: z.string().url().optional().nullable(),
 });
 

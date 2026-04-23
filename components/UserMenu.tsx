@@ -10,21 +10,44 @@ export default function UserMenu() {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+    const loadUserRole = async (authUser: User | null) => {
+      setUser(authUser);
+
+      if (!authUser) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .single();
+
+      const adminFromProfile = profile?.role === 'admin';
+      const adminFromMetadata =
+        (authUser.app_metadata?.role as string) === 'admin';
+
+      setIsAdmin(adminFromProfile || adminFromMetadata);
       setLoading(false);
+    };
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      loadUserRole(user);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      loadUserRole(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -99,6 +122,15 @@ export default function UserMenu() {
             >
               Moje narudžbe
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setShowMenu(false)}
+              >
+                Na admin panel
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               disabled={logoutLoading}
