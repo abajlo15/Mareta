@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.maretasunglasses.com"),
   title: "Mareta Webshop - Sunčane naočale",
   description: "Prodaja sunčanih naočala",
   icons: {
