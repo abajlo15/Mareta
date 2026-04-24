@@ -72,10 +72,30 @@ export default function ProductDetailPage() {
   const images = product.images && product.images.length > 0 
     ? product.images 
     : ['/placeholder.svg'];
+  const visibleCategories = (product.categories ?? []).filter(
+    (category) => category.trim() !== "Muške naočale"
+  );
   const mainImage = images[selectedImageIndex] || images[0];
+  const hasMultipleImages = images.length > 1;
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
   const discountPercentage = normalizeDiscountPercentage(product.discount_percentage);
+  const showPreviousImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+    setSelectedImageIndex((currentIndex) =>
+      currentIndex === 0 ? images.length - 1 : currentIndex - 1
+    );
+  };
+  const showNextImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+    setSelectedImageIndex((currentIndex) =>
+      currentIndex === images.length - 1 ? 0 : currentIndex + 1
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -87,6 +107,29 @@ export default function ProductDetailPage() {
                 AKCIJA -{discountPercentage}%
               </span>
             )}
+            {hasMultipleImages && (
+              <>
+                <span className="absolute bottom-3 right-3 z-10 rounded-full bg-black/65 px-3 py-1 text-sm font-medium text-white">
+                  {selectedImageIndex + 1} / {images.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={showPreviousImage}
+                  className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-2xl font-bold text-gray-800 shadow hover:bg-white"
+                  aria-label="Prikaži prethodnu sliku"
+                >
+                  &#8249;
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextImage}
+                  className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-2xl font-bold text-gray-800 shadow hover:bg-white"
+                  aria-label="Prikaži sljedeću sliku"
+                >
+                  &#8250;
+                </button>
+              </>
+            )}
             <Image
               src={mainImage}
               alt={product.name}
@@ -95,35 +138,12 @@ export default function ProductDetailPage() {
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
-          {images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {images.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImageIndex(index)}
-                  className={`relative w-full h-24 border-2 rounded ${
-                    selectedImageIndex === index
-                      ? 'border-blue-600'
-                      : 'border-gray-300'
-                  }`}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.name} ${index + 1}`}
-                    fill
-                    className="object-cover rounded"
-                    sizes="96px"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-4 break-words">{product.name}</h1>
-          {product.categories?.length && (
-            <p className="text-gray-600 mb-4">Kolekcija: {product.categories.join(", ")}</p>
+          {visibleCategories.length > 0 && (
+            <p className="text-gray-600 mb-4">Kolekcija: {visibleCategories.join(", ")}</p>
           )}
           <div className="mb-4">
             {productHasDiscount && (

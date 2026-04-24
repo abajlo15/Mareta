@@ -41,6 +41,18 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return NextResponse.json(
+      { error: "Potrebno je odabrati barem jednu kolekciju." },
+      { status: 400 }
+    );
+  }
+  if (typeof subcollectionId !== "string" || !subcollectionId.trim()) {
+    return NextResponse.json(
+      { error: "Podkolekcija je obavezna." },
+      { status: 400 }
+    );
+  }
 
   const stockValue = typeof stock === "number" ? Math.max(0, stock) : 0;
   const discountValue =
@@ -52,8 +64,8 @@ export async function POST(request: Request) {
     name,
     description,
     price,
-    categories: Array.isArray(categories) ? categories : [],
-    subcollection_id: subcollectionId || null,
+    categories,
+    subcollection_id: subcollectionId,
     stock: stockValue,
     is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
     discount_percentage: discountValue,

@@ -73,6 +73,13 @@ export default function AdminSidebar() {
           >
             Narudžbe
           </a>
+          <a
+            href="/admin/discounts"
+            className="block rounded px-3 py-2 hover:bg-slate-800"
+            onClick={() => setOpen(false)}
+          >
+            Grupni popust
+          </a>
           <Link
             href="/"
             className="block rounded px-3 py-2 hover:bg-slate-800"

@@ -79,6 +79,14 @@ export default function AdminProductsForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!selectedCollections.length) {
+      setError("Odaberi barem jednu kolekciju.");
+      return;
+    }
+    if (!subcollectionId) {
+      setError("Podkolekcija je obavezna.");
+      return;
+    }
     setLoading(true);
 
     const res = await fetch("/api/admin/products", {
@@ -225,8 +233,9 @@ export default function AdminProductsForm({
           className="w-full border border-slate-300 rounded px-3 py-2"
           value={subcollectionId}
           onChange={(e) => setSubcollectionId(e.target.value)}
+          required
         >
-          <option value="">— Bez podkolekcije —</option>
+          <option value="">— Odaberi podkolekciju —</option>
           {subcollections.map((subcollection) => (
             <option key={subcollection.id} value={subcollection.id}>
               {subcollection.name}
