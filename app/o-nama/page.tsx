@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ONamaPage() {
   return (
-    <main className="min-h-screen bg-gradient-soft">
+    <main className="bg-gradient-soft">
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600/10 via-accent-500/10 to-dark-900/20" />
         <div className="relative container mx-auto px-4 py-12 sm:py-16 lg:py-24">
