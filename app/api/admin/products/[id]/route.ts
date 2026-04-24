@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
-    await requireAdmin();
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Nedozvoljeno." }, { status: 403 });
+    }
+
     const supabase = await createSupabaseServerClient();
     const { id } = await params;
 
@@ -59,6 +63,31 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch {
     return NextResponse.json(
       { error: "Greška pri ažuriranju." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(_request: Request, { params }: Params) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Nedozvoljeno." }, { status: 403 });
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { id } = await params;
+
+    const { error } = await supabase.from("products").delete().eq("id", id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Greška pri brisanju artikla." },
       { status: 500 }
     );
   }

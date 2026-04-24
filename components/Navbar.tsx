@@ -93,6 +93,13 @@ export default function Navbar() {
               >
                 Kontakt
               </Link>
+              <Link
+                href="/galerija"
+                className="text-gray-200 hover:text-primary-400 transition-colors duration-200 font-medium py-2 md:py-0"
+                onClick={() => setMenuOpen(false)}
+              >
+                Galerija
+              </Link>
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <div className="order-2 md:order-1 flex items-center justify-center md:justify-start gap-4">
                   <Link

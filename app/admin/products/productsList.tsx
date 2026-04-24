@@ -1,4 +1,13 @@
+'use client';
+
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+type Toast = {
+  type: "success" | "error";
+  message: string;
+};
 
 type Product = {
   id: string;
@@ -13,13 +22,77 @@ type Product = {
 };
 
 export default function AdminProductsList({ products }: { products: Product[] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
+
+  const handleDelete = async (id: string, name: string) => {
+    const confirmed = window.confirm(`Jesi siguran/na da želiš obrisati artikal "${name}"?`);
+    if (!confirmed) return;
+
+    setDeletingId(id);
+    try {
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        setToast({
+          type: "error",
+          message: data?.error || "Brisanje nije uspjelo.",
+        });
+        return;
+      }
+
+      setToast({
+        type: "success",
+        message: "Artikal je uspješno obrisan.",
+      });
+      window.setTimeout(() => {
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 700);
+    } catch {
+      setToast({
+        type: "error",
+        message: "Došlo je do greške pri brisanju artikla.",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (!products.length) {
     return <p className="text-slate-500">Još nema artikala.</p>;
   }
 
   return (
-    <div className="border border-slate-200 rounded-lg bg-white shadow-sm overflow-x-auto">
-      <table className="w-full text-sm min-w-[640px]">
+    <>
+      {toast && (
+        <div className="fixed top-4 right-4 z-50">
+          <div
+            className={`rounded-lg px-4 py-3 text-sm font-medium shadow-lg border ${
+              toast.type === "success"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : "bg-red-50 text-red-800 border-red-200"
+            }`}
+          >
+            {toast.message}
+          </div>
+        </div>
+      )}
+      <div className="border border-slate-200 rounded-lg bg-white shadow-sm overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
         <thead className="bg-slate-50">
           <tr>
             <th className="px-4 py-2 text-left">Slika</th>
@@ -67,18 +140,29 @@ export default function AdminProductsList({ products }: { products: Product[] })
                 {p.discount_percentage ? `-${p.discount_percentage}%` : "—"}
               </td>
               <td className="px-4 py-2">
-                <Link
-                  href={`/admin/products/${p.id}`}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Uredi
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Uredi
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id, p.name)}
+                    disabled={isPending || deletingId === p.id}
+                    className="text-red-600 hover:text-red-800 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {deletingId === p.id ? "Brisanje..." : "Obriši"}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+    </>
   );
 }
 

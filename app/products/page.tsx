@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import ProductGrid from '@/components/ProductGrid';
 import SearchBar from '@/components/SearchBar';
 import Filters from '@/components/Filters';
@@ -119,31 +120,37 @@ function ProductsPageContent() {
           <button
             type="button"
             onClick={() => router.push('/products?kolekcija=muska')}
-            className="rounded-xl border border-gray-300 bg-white p-8 sm:p-10 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left"
+            className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[280px] sm:min-h-[320px]"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <svg className="w-8 h-8 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="9" cy="15" r="5" strokeWidth="2" />
-                <path strokeWidth="2" strokeLinecap="round" d="M13 11L20 4M16 4h4v4" />
-              </svg>
-              <h2 className="text-xl font-semibold text-gray-900">Muška kolekcija</h2>
+            <Image
+              src="/muškaKolekcija.jpeg"
+              alt="Muška kolekcija"
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
+            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+              <h2 className="text-xl font-semibold text-white mb-1">Muška kolekcija</h2>
             </div>
-            <p className="text-sm text-gray-600">Prikaz: Muška + Unisex</p>
           </button>
 
           <button
             type="button"
             onClick={() => router.push('/products?kolekcija=zenska')}
-            className="rounded-xl border border-gray-300 bg-white p-8 sm:p-10 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left"
+            className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[280px] sm:min-h-[320px]"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <svg className="w-8 h-8 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="8" r="5" strokeWidth="2" />
-                <path strokeWidth="2" strokeLinecap="round" d="M12 13v7M9 17h6" />
-              </svg>
-              <h2 className="text-xl font-semibold text-gray-900">Ženska kolekcija</h2>
+            <Image
+              src="/zenskaKolekcija.jpeg"
+              alt="Ženska kolekcija"
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
+            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+              <h2 className="text-xl font-semibold text-white mb-1">Ženska kolekcija</h2>
             </div>
-            <p className="text-sm text-gray-600">Prikaz: Ženska + Unisex</p>
           </button>
         </div>
         </div>
