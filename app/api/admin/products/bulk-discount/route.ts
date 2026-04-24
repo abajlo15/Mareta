@@ -31,16 +31,16 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .update({ discount_percentage: discountValue })
     .in("id", productIds)
-    .select("id", { count: "exact" });
+    .select("id");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, updatedCount: count ?? 0 });
+  return NextResponse.json({ ok: true, updatedCount: data?.length ?? 0 });
 }
 
