@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type Subcollection = {
   id: string;
   name: string;
+  gender: "male" | "female";
+  thumbnail_url: string | null;
 };
 
 export default function AdminSubcollectionsManager({
@@ -13,11 +15,69 @@ export default function AdminSubcollectionsManager({
   initialSubcollections: Subcollection[];
 }) {
   const [name, setName] = useState("");
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingGender, setEditingGender] = useState<"male" | "female">("male");
+  const [editingThumbnailUrl, setEditingThumbnailUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? "Greška pri uploadu slike.");
+    }
+
+    const { url } = (await res.json()) as { url: string };
+    return url;
+  }
+
+  async function handleCreateImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadImage(file);
+      setThumbnailUrl(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleEditImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingEdit(true);
+    setError(null);
+    try {
+      const url = await uploadImage(file);
+      setEditingThumbnailUrl(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
+    } finally {
+      setUploadingEdit(false);
+      e.target.value = "";
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +87,7 @@ export default function AdminSubcollectionsManager({
     const res = await fetch("/api/admin/subcollections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, gender, thumbnailUrl: thumbnailUrl || null }),
     });
 
     setLoading(false);
@@ -39,6 +99,11 @@ export default function AdminSubcollectionsManager({
     }
 
     setName("");
+    setGender("male");
+    setThumbnailUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     window.location.reload();
   }
 
@@ -49,7 +114,11 @@ export default function AdminSubcollectionsManager({
     const res = await fetch(`/api/admin/subcollections/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editingName }),
+      body: JSON.stringify({
+        name: editingName,
+        gender: editingGender,
+        thumbnailUrl: editingThumbnailUrl || null,
+      }),
     });
 
     setActionLoadingId(null);
@@ -62,6 +131,11 @@ export default function AdminSubcollectionsManager({
 
     setEditingId(null);
     setEditingName("");
+    setEditingGender("male");
+    setEditingThumbnailUrl("");
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
+    }
     window.location.reload();
   }
 
@@ -87,8 +161,11 @@ export default function AdminSubcollectionsManager({
     window.location.reload();
   }
 
+  const maleSubcollections = initialSubcollections.filter((item) => item.gender === "male");
+  const femaleSubcollections = initialSubcollections.filter((item) => item.gender === "female");
+
   return (
-    <div className="space-y-3 max-w-md border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+    <div className="space-y-3 max-w-2xl border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
       <h3 className="text-lg font-semibold">Podkolekcije</h3>
       <p className="text-sm text-slate-600">
         Kreiraj podkolekcije koje ćeš zatim moći birati na proizvodu.
@@ -96,39 +173,86 @@ export default function AdminSubcollectionsManager({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <form onSubmit={handleCreate} className="flex gap-2">
+      <form onSubmit={handleCreate} className="space-y-3 border border-slate-200 rounded p-3">
         <input
-          className="flex-1 border border-slate-300 rounded px-3 py-2"
+          className="w-full border border-slate-300 rounded px-3 py-2"
           placeholder="Naziv podkolekcije"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
         />
+        <select
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          value={gender}
+          onChange={(e) => setGender(e.target.value as "male" | "female")}
+        >
+          <option value="male">Muške podkolekcije</option>
+          <option value="female">Ženske podkolekcije</option>
+        </select>
+        <div>
+          <label className="block text-sm font-medium mb-1">Thumbnail</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleCreateImageChange}
+            disabled={uploading}
+            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer"
+          />
+          {uploading && <p className="text-sm text-slate-500 mt-1">Upload slike...</p>}
+          {thumbnailUrl && <img src={thumbnailUrl} alt="" className="mt-2 w-16 h-16 object-cover rounded border" />}
+        </div>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || uploading}
           className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {loading ? "Spremanje..." : "Dodaj"}
         </button>
       </form>
 
-      <div className="text-sm text-slate-700 space-y-2">
-        {initialSubcollections.length ? (
-          initialSubcollections.map((item) => (
+      <div className="grid md:grid-cols-2 gap-4 text-sm text-slate-700">
+        {[{ title: "Muške podkolekcije", data: maleSubcollections }, { title: "Ženske podkolekcije", data: femaleSubcollections }].map((group) => (
+          <div key={group.title} className="space-y-2">
+            <h4 className="font-semibold">{group.title}</h4>
+            {group.data.length ? (
+              group.data.map((item) => (
             <div key={item.id} className="flex items-center gap-2">
               {editingId === item.id ? (
                 <>
+                  <img
+                    src={editingThumbnailUrl || "/placeholder.svg"}
+                    alt=""
+                    className="w-10 h-10 rounded object-cover border"
+                  />
+                  <div className="flex-1 space-y-1">
                   <input
-                    className="flex-1 border border-slate-300 rounded px-2 py-1"
+                    className="w-full border border-slate-300 rounded px-2 py-1"
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
                     required
                   />
+                    <select
+                      className="w-full border border-slate-300 rounded px-2 py-1"
+                      value={editingGender}
+                      onChange={(e) => setEditingGender(e.target.value as "male" | "female")}
+                    >
+                      <option value="male">Muška</option>
+                      <option value="female">Ženska</option>
+                    </select>
+                    <input
+                      ref={editFileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleEditImageChange}
+                      disabled={uploadingEdit}
+                      className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleUpdate(item.id)}
-                    disabled={actionLoadingId === item.id}
+                    disabled={actionLoadingId === item.id || uploadingEdit}
                     className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
                   >
                     Spremi
@@ -138,6 +262,8 @@ export default function AdminSubcollectionsManager({
                     onClick={() => {
                       setEditingId(null);
                       setEditingName("");
+                      setEditingGender("male");
+                      setEditingThumbnailUrl("");
                     }}
                     className="px-2 py-1 rounded bg-slate-200 text-slate-800 hover:bg-slate-300"
                   >
@@ -146,12 +272,19 @@ export default function AdminSubcollectionsManager({
                 </>
               ) : (
                 <>
+                  <img
+                    src={item.thumbnail_url || "/placeholder.svg"}
+                    alt=""
+                    className="w-10 h-10 rounded object-cover border"
+                  />
                   <span className="flex-1 px-2 py-1 rounded bg-slate-100">{item.name}</span>
                   <button
                     type="button"
                     onClick={() => {
                       setEditingId(item.id);
                       setEditingName(item.name);
+                      setEditingGender(item.gender);
+                      setEditingThumbnailUrl(item.thumbnail_url ?? "");
                     }}
                     className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600"
                   >
@@ -168,10 +301,12 @@ export default function AdminSubcollectionsManager({
                 </>
               )}
             </div>
-          ))
-        ) : (
-          <p className="text-slate-500">Još nema podkolekcija.</p>
-        )}
+              ))
+            ) : (
+              <p className="text-slate-500">Još nema podkolekcija.</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

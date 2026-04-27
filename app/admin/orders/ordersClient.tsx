@@ -8,6 +8,15 @@ type Order = {
   total_amount: number;
   created_at: string;
   payment_method?: "card" | "cash_on_delivery" | string;
+  shipping_provider?: "internal" | "boxnow" | string;
+  boxnow_locker_id?: string | null;
+  boxnow_parcel_id?: string | null;
+  boxnow_reference_number?: string | null;
+  boxnow_calculated_weight?: number | null;
+  boxnow_label_url?: string | null;
+  boxnow_last_event?: string | null;
+  boxnow_sync_status?: string | null;
+  boxnow_sync_error?: string | null;
   shipping_address?: {
     full_name?: string;
     email?: string;
@@ -31,7 +40,7 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
   const [copySuccess, setCopySuccess] = useState(false);
 
   function statusLabel(status: string) {
-    if (status === "pending") return "Na čekanju";
+    if (status === "pending") return "Zaprimljeno";
     if (status === "paid") return "Plaćeno";
     if (status === "shipped") return "Poslano";
     if (status === "delivered") return "Dostavljeno";
@@ -43,6 +52,19 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
     if (paymentMethod === "card") return "Kartica";
     if (paymentMethod === "cash_on_delivery") return "Pouzećem";
     return "—";
+  }
+
+  function boxNowPortalStatusLabel(order: Order) {
+    if (order.shipping_provider !== "boxnow") {
+      return null;
+    }
+    if (order.boxnow_parcel_id || order.boxnow_reference_number || order.boxnow_sync_status === "synced") {
+      return { label: "Poslano u BoxNow", tone: "text-emerald-700" };
+    }
+    if (order.boxnow_sync_status === "failed") {
+      return { label: "Greška slanja u BoxNow", tone: "text-red-700" };
+    }
+    return { label: "Lokalno kreirano (nije poslano u BoxNow)", tone: "text-amber-700" };
   }
 
   async function copyShippingDetails(order: Order) {
@@ -81,6 +103,65 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
       return;
     }
 
+    window.location.reload();
+  }
+
+  async function deleteOrder(id: string) {
+    const confirmed = window.confirm(
+      "Jeste li sigurni da želite trajno obrisati ovu narudžbu? Ova akcija se ne može poništiti."
+    );
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const responseText = await res.text();
+      let message = "Greška pri brisanju narudžbe.";
+      if (responseText) {
+        try {
+          const payload = JSON.parse(responseText) as { error?: string };
+          message = payload.error || message;
+        } catch {
+          message = `${message} (HTTP ${res.status})`;
+        }
+      } else {
+        message = `${message} (HTTP ${res.status})`;
+      }
+      alert(message);
+      return;
+    }
+
+    setSelectedOrder(null);
+    window.location.reload();
+  }
+
+  async function runBoxNowAction(
+    id: string,
+    action: "sync_now" | "refetch_label" | "cancel_parcel" | "create_return"
+  ) {
+    const res = await fetch(`/api/admin/orders/${id}/boxnow`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (!res.ok) {
+      const responseText = await res.text();
+      let message = "Greška BoxNow akcije.";
+      if (responseText) {
+        try {
+          const payload = JSON.parse(responseText) as { error?: string };
+          message = payload.error || message;
+        } catch {
+          message = `${message} (HTTP ${res.status})`;
+        }
+      } else {
+        message = `${message} (HTTP ${res.status})`;
+      }
+      alert(message);
+      return;
+    }
     window.location.reload();
   }
 
@@ -178,7 +259,99 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
               </div>
             </div>
 
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => deleteOrder(selectedOrder.id)}
+                className="px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 text-sm"
+              >
+                Obriši narudžbu trajno
+              </button>
+            </div>
+
             <div className="mt-6">
+              {selectedOrder.shipping_provider === "boxnow" && (
+                <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm">
+                  <h4 className="font-semibold mb-2">BoxNow podaci</h4>
+                  <p>
+                    <span className="text-slate-600">Locker ID:</span>{" "}
+                    {selectedOrder.boxnow_locker_id || "—"}
+                  </p>
+                  <p>
+                    <span className="text-slate-600">Parcel ID:</span>{" "}
+                    {selectedOrder.boxnow_parcel_id || "—"}
+                  </p>
+                  <p>
+                    <span className="text-slate-600">Reference:</span>{" "}
+                    {selectedOrder.boxnow_reference_number || "—"}
+                  </p>
+                  <p>
+                    <span className="text-slate-600">Zadnji event:</span>{" "}
+                    {selectedOrder.boxnow_last_event || "—"}
+                  </p>
+                  <p>
+                    <span className="text-slate-600">Sync status:</span>{" "}
+                    {selectedOrder.boxnow_sync_status || "—"}
+                  </p>
+                  <p>
+                    <span className="text-slate-600">Izračunata težina:</span>{" "}
+                    {typeof selectedOrder.boxnow_calculated_weight === "number"
+                      ? `${selectedOrder.boxnow_calculated_weight.toFixed(3)} kg`
+                      : "—"}
+                  </p>
+                  {boxNowPortalStatusLabel(selectedOrder) && (
+                    <p>
+                      <span className="text-slate-600">Portal status:</span>{" "}
+                      <span className={boxNowPortalStatusLabel(selectedOrder)?.tone}>
+                        {boxNowPortalStatusLabel(selectedOrder)?.label}
+                      </span>
+                    </p>
+                  )}
+                  {selectedOrder.boxnow_sync_error && (
+                    <p className="text-red-700">
+                      <span className="text-slate-600">Razlog greške:</span>{" "}
+                      {selectedOrder.boxnow_sync_error}
+                    </p>
+                  )}
+                  {selectedOrder.boxnow_label_url && (
+                    <p>
+                      <a
+                        href={selectedOrder.boxnow_label_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 underline underline-offset-2"
+                      >
+                        Otvori labelu
+                      </a>
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => runBoxNowAction(selectedOrder.id, "sync_now")}
+                      className="px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      Pošalji u BoxNow sada
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => runBoxNowAction(selectedOrder.id, "refetch_label")}
+                      className="px-2 py-1 rounded border border-slate-300 hover:bg-white"
+                    >
+                      Ponovno dohvati adresnicu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => runBoxNowAction(selectedOrder.id, "cancel_parcel")}
+                      className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                    >
+                      Cancel BoxNow parcel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold">Podaci za dostavu</h4>
                 {selectedOrder.shipping_address && (
@@ -249,6 +422,7 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
               ) : (
                 <p className="text-sm text-slate-500">Nema stavki narudžbe.</p>
               )}
+            </div>
             </div>
           </div>
         </div>

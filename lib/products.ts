@@ -3,6 +3,8 @@ import type { Product } from '@/types/product';
 export type Subcollection = {
   id: string;
   name: string;
+  gender: 'male' | 'female';
+  thumbnail_url: string | null;
 };
 
 export async function fetchProducts(filters?: {
@@ -43,13 +45,19 @@ export async function fetchProducts(filters?: {
   }
 }
 
-export async function fetchSubcollections(): Promise<Subcollection[]> {
+export async function fetchSubcollections(gender?: 'male' | 'female'): Promise<Subcollection[]> {
   try {
     const baseUrl = typeof window !== 'undefined'
       ? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-    const response = await fetch(`${baseUrl}/api/subcollections`, {
+    const params = new URLSearchParams();
+    if (gender) {
+      params.set('gender', gender);
+    }
+
+    const queryString = params.toString();
+    const response = await fetch(`${baseUrl}/api/subcollections${queryString ? `?${queryString}` : ''}`, {
       cache: 'no-store',
     });
 

@@ -2,13 +2,19 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
+const AUDIENCES = ["male", "female", "both"] as const;
+type Audience = (typeof AUDIENCES)[number];
+
+const isValidAudience = (value: unknown): value is Audience =>
+  typeof value === "string" && AUDIENCES.includes(value as Audience);
+
 export async function GET() {
   await requireAdmin();
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images")
+    .select("id, name, description, price, discount_percentage, categories, audience, subcollection_id, stock, is_polarized, images")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -23,12 +29,13 @@ export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
 
   const body = await request.json();
-  const { name, description, price, discountPercentage, categories, subcollectionId, stock, isPolarized, images } = body as {
+  const { name, description, price, discountPercentage, categories, audience, subcollectionId, stock, isPolarized, images } = body as {
     name?: string;
     description?: string;
     price?: number;
     discountPercentage?: number;
     categories?: string[];
+    audience?: Audience;
     subcollectionId?: string | null;
     stock?: number;
     isPolarized?: boolean;
@@ -41,15 +48,32 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!Array.isArray(categories) || categories.length === 0) {
-    return NextResponse.json(
-      { error: "Potrebno je odabrati barem jednu kolekciju." },
-      { status: 400 }
-    );
+  if (!isValidAudience(audience)) {
+    return NextResponse.json({ error: "Odaberi valjanu kolekciju." }, { status: 400 });
   }
   if (typeof subcollectionId !== "string" || !subcollectionId.trim()) {
     return NextResponse.json(
       { error: "Podkolekcija je obavezna." },
+      { status: 400 }
+    );
+  }
+
+  const { data: selectedSubcollection, error: subcollectionError } = await supabase
+    .from("subcollections")
+    .select("id, gender")
+    .eq("id", subcollectionId)
+    .single();
+
+  if (subcollectionError || !selectedSubcollection) {
+    return NextResponse.json({ error: "Odabrana podkolekcija ne postoji." }, { status: 400 });
+  }
+
+  if (
+    audience !== "both" &&
+    selectedSubcollection.gender !== audience
+  ) {
+    return NextResponse.json(
+      { error: "Odabrana podkolekcija ne pripada odabranoj kolekciji." },
       { status: 400 }
     );
   }
@@ -64,7 +88,8 @@ export async function POST(request: Request) {
     name,
     description,
     price,
-    categories,
+    categories: Array.isArray(categories) ? categories : [],
+    audience,
     subcollection_id: subcollectionId,
     stock: stockValue,
     is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,

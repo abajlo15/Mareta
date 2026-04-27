@@ -5,6 +5,8 @@ import { useState, useRef } from "react";
 type Subcollection = {
   id: string;
   name: string;
+  gender: "male" | "female";
+  thumbnail_url: string | null;
 };
 
 export default function AdminProductsForm({
@@ -15,14 +17,13 @@ export default function AdminProductsForm({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<string>("");
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [audience, setAudience] = useState<"male" | "female" | "both">("male");
+  const [categoriesInput, setCategoriesInput] = useState("");
   const [subcollectionId, setSubcollectionId] = useState<string>("");
   const [stock, setStock] = useState<string>("0");
   const [discountPercentage, setDiscountPercentage] = useState<string>("0");
   const [isPolarized, setIsPolarized] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
-
-  const COLLECTIONS = ["Muška kolekcija", "Ženska kolekcija"];
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -68,21 +69,13 @@ export default function AdminProductsForm({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function toggleCollection(collection: string) {
-    setSelectedCollections((prev) =>
-      prev.includes(collection)
-        ? prev.filter((item) => item !== collection)
-        : [...prev, collection]
-    );
-  }
+  const filteredSubcollections = subcollections.filter((item) =>
+    audience === "both" ? true : item.gender === audience
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!selectedCollections.length) {
-      setError("Odaberi barem jednu kolekciju.");
-      return;
-    }
     if (!subcollectionId) {
       setError("Podkolekcija je obavezna.");
       return;
@@ -97,7 +90,11 @@ export default function AdminProductsForm({
         description,
         price: parseFloat(price),
         discountPercentage: Math.max(0, Math.min(100, parseInt(discountPercentage, 10) || 0)),
-        categories: selectedCollections,
+        audience,
+        categories: categoriesInput
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
@@ -116,7 +113,8 @@ export default function AdminProductsForm({
     setName("");
     setDescription("");
     setPrice("");
-    setSelectedCollections([]);
+    setAudience("male");
+    setCategoriesInput("");
     setSubcollectionId("");
     setStock("0");
     setDiscountPercentage("0");
@@ -211,20 +209,32 @@ export default function AdminProductsForm({
         </div>
       </div>
 
-      <div>
-        <p className="block text-sm font-medium mb-2">Kolekcije</p>
+      <div className="space-y-2">
+        <p className="block text-sm font-medium">Kolekcija</p>
         <div className="space-y-2">
-          {COLLECTIONS.map((collection) => (
-            <label key={collection} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={selectedCollections.includes(collection)}
-                onChange={() => toggleCollection(collection)}
-              />
-              <span>{collection}</span>
-            </label>
-          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "male"} onChange={() => { setAudience("male"); setSubcollectionId(""); }} />
+            <span>Muška kolekcija</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "female"} onChange={() => { setAudience("female"); setSubcollectionId(""); }} />
+            <span>Ženska kolekcija</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "both"} onChange={() => { setAudience("both"); setSubcollectionId(""); }} />
+            <span>Oboje</span>
+          </label>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Tagovi (categories)</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          placeholder="npr. premium, novo"
+          value={categoriesInput}
+          onChange={(e) => setCategoriesInput(e.target.value)}
+        />
       </div>
 
       <div>
@@ -236,12 +246,15 @@ export default function AdminProductsForm({
           required
         >
           <option value="">— Odaberi podkolekciju —</option>
-          {subcollections.map((subcollection) => (
+          {filteredSubcollections.map((subcollection) => (
             <option key={subcollection.id} value={subcollection.id}>
-              {subcollection.name}
+              {subcollection.name} {subcollection.gender === "male" ? "(Muška)" : "(Ženska)"}
             </option>
           ))}
         </select>
+        <p className="text-xs text-slate-500 mt-1">
+          Za "Oboje" možeš odabrati mušku ili žensku podkolekciju.
+        </p>
       </div>
 
       <div>

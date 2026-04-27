@@ -11,16 +11,6 @@ import type { Product } from '@/types/product';
 
 type CollectionChoice = 'muska' | 'zenska' | null;
 
-const normalizeCategoryLabel = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-
-const includesAnyKeyword = (categories: string[], keywords: string[]) =>
-  categories.some((category) => keywords.some((keyword) => category.includes(keyword)));
-
 function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,17 +19,24 @@ function ProductsPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [subcollectionId, setSubcollectionId] = useState('');
-  const [subcollections, setSubcollections] = useState<{ id: string; name: string }[]>([]);
+  const [subcollections, setSubcollections] = useState<
+    { id: string; name: string; thumbnail_url: string | null }[]
+  >([]);
   const [polarized, setPolarized] = useState<boolean | null>(null);
   const selectedCollectionParam = searchParams.get('kolekcija');
   const selectedCollection: CollectionChoice =
     selectedCollectionParam === 'muska' || selectedCollectionParam === 'zenska'
       ? selectedCollectionParam
       : null;
+  const selectedSubcollection = subcollections.find((item) => item.id === subcollectionId) ?? null;
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [selectedCollection]);
+
+  useEffect(() => {
+    setSubcollectionId('');
+  }, [selectedCollection]);
 
   useEffect(() => {
     applyFilters();
@@ -48,9 +45,10 @@ function ProductsPageContent() {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      const genderParam = selectedCollection === 'muska' ? 'male' : selectedCollection === 'zenska' ? 'female' : undefined;
       const [data, allSubcollections] = await Promise.all([
         fetchProducts(),
-        fetchSubcollections(),
+        fetchSubcollections(genderParam),
       ]);
       setProducts(data);
       setFilteredProducts(data);
@@ -67,14 +65,10 @@ function ProductsPageContent() {
 
     if (selectedCollection) {
       filtered = filtered.filter((p) => {
-        const normalizedCategories = (p.categories ?? []).map(normalizeCategoryLabel);
-        const hasUnisex = includesAnyKeyword(normalizedCategories, ['unisex', 'uni sex', 'oboje']);
-        const hasTarget =
-          selectedCollection === 'muska'
-            ? includesAnyKeyword(normalizedCategories, ['musk'])
-            : includesAnyKeyword(normalizedCategories, ['zensk']);
-
-        return hasTarget || hasUnisex;
+        if (selectedCollection === 'muska') {
+          return p.audience === 'male' || p.audience === 'both';
+        }
+        return p.audience === 'female' || p.audience === 'both';
       });
     }
 
@@ -158,32 +152,106 @@ function ProductsPageContent() {
     );
   }
 
+  if (!subcollectionId) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="flex flex-col items-center gap-3 mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-elegant font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
+              {selectedCollection === 'muska' ? 'Muška kolekcija' : 'Ženska kolekcija'}
+            </h1>
+            <button
+              type="button"
+              onClick={() => router.push('/products')}
+              className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+            >
+              Promijeni kolekciju
+            </button>
+          </div>
+
+          <p className="text-gray-600 mb-6">Odaberi podkolekciju.</p>
+
+          {subcollections.length ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {subcollections.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSubcollectionId(item.id)}
+                  className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[260px]"
+                >
+                  <Image
+                    src={item.thumbnail_url || '/placeholder.svg'}
+                    alt={item.name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <h2 className="text-xl font-semibold text-white mb-1">{item.name}</h2>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-gray-600">Trenutno nema podkolekcija za ovu kolekciju.</p>
+              <button
+                type="button"
+                onClick={() => router.push('/products')}
+                className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+              >
+                Vrati se na odabir kolekcije
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-elegant font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
-          {selectedCollection === 'muska' ? 'Muška kolekcija' : 'Ženska kolekcija'}
-        </h1>
-        <button
-          type="button"
-          onClick={() => {
-            router.push('/products');
-            setSearch('');
-            setSubcollectionId('');
-            setPolarized(null);
-          }}
-          className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
-        >
-          Promijeni kolekciju
-        </button>
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-elegant font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
+            {selectedCollection === 'muska' ? 'Muška kolekcija' : 'Ženska kolekcija'}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Podkolekcija: <span className="font-medium">{selectedSubcollection?.name ?? '-'}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSubcollectionId('');
+              setSearch('');
+              setPolarized(null);
+            }}
+            className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+          >
+            Promijeni podkolekciju
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              router.push('/products');
+              setSearch('');
+              setSubcollectionId('');
+              setPolarized(null);
+            }}
+            className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+          >
+            Promijeni kolekciju
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1">
           <Filters
-            subcollectionId={subcollectionId}
-            onSubcollectionChange={setSubcollectionId}
-            subcollections={subcollections}
             polarized={polarized}
             onPolarizedChange={setPolarized}
           />

@@ -15,12 +15,12 @@ export default async function AdminProductEditPage({ params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images")
+    .select("id, name, description, price, discount_percentage, categories, audience, subcollection_id, stock, is_polarized, images")
     .eq("id", id)
     .single();
   const { data: subcollections } = await supabase
     .from("subcollections")
-    .select("id, name")
+    .select("id, name, gender, thumbnail_url")
     .order("name", { ascending: true });
 
   if (error || !product) {

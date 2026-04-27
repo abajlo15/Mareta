@@ -16,7 +16,8 @@ type Product = {
   price: number;
   discount_percentage?: number;
   categories?: string[] | null;
-  subcollection?: { name: string } | null;
+  audience: "male" | "female" | "both";
+  subcollection?: { name: string; gender: "male" | "female" } | null;
   stock?: number;
   images?: string[] | null;
 };
@@ -122,7 +123,7 @@ export default function AdminProductsList({ products }: { products: Product[] })
               </td>
               <td className="px-4 py-2">{p.name}</td>
               <td className="px-4 py-2 text-slate-600">
-                {p.categories?.length ? p.categories.join(", ") : "-"}
+                {p.audience === "male" ? "Muška" : p.audience === "female" ? "Ženska" : "Oboje"}
               </td>
               <td className="px-4 py-2 text-slate-600">
                 {p.subcollection?.name || "-"}

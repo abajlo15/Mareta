@@ -1,0 +1,59 @@
+Pozdrav,
+
+ 
+
+Šaljem podatke potrebne za integraciju web shopa sa BOX NOW dostavom.
+
+Potrebno je na webu u procesu kupovine kupcu omogućiti odabir BOX NOW shipping metode i odabir samog paketomata u koji kupac želi isporuku.
+
+Za taj dio imamo razvijen widget koji se može pozvati u odgovarajućem koraku na web shopu.
+
+Sam widget možete vidjeti na: https://widget-v5.boxnow.hr/
+
+Tehnički podaci za widget potrebni developerima za dodavanje na web su dostupni na: https://www.boxnow.hr/diy/widget/developers
+
+Znači, widget kupcu prikazuje dostupne paketomate i web shopu vraća ID odabranog paketomata.
+
+ 
+
+Kako bi BOX NOW mogao odraditi dostavu potrebno je u naš sustav (putem API-a ili ručno kroz Partner portal) poslati obavezne podatke za dostavu (ime, prezime, email i broj mobitela kupca, te ID paketomata u koji ide dostava dobiven odabirom u već spomenutom widgetu).
+
+BOX NOW sustav potom vraća adresnicu za paket na email ili ju ERP može dohvatiti putem API poziva. Također adresnicu je moguće dohvatiti u svakom slučaju i kroz Partner portal.
+
+Za praćenje statusa paketa koristite Webhook. Na ovaj način možete pratiti status paketa i svaku promjenu koja se desila u realnom vremenu.
+
+API i Webhook dokumentacija sa svim pozivima potrebnim za integraciju ERP-a je dostupna na: https://www.boxnow.hr/partner-api
+
+API manual i Webhook manual također u privitku maila.
+
+ 
+
+Kako bi mogli raditi API pozive prema BOX NOW sustavu i pristupiti Partner portalu otvorili smo vas kao partnera, info za povezivanje:
+
+Client id:  46507bc3-e285-4217-b0a0-4d06e1de1a86 
+
+Client secret: a343f642bed19f4c8769660d2d66ad1d2b75d59e82adf0647346c77ec3b23b79 
+
+Webhook secret: 516b55bc574ecc5af83554e0a3b0b1a5151702ac8cb6fda202aaec7146d4e853
+
+Api url: https://api-production.boxnow.hr
+
+Partner ID:  8816
+
+Warehouse ID:
+
+ 
+
+Pristup partner portalu moguć je na https://partner.boxnow.hr/ , prijava putem ovlaštenog broja mobitela (trenutno je to +385992930824).
+
+Za Partner portal imamo i manual koji je također u privitku.
+
+ 
+
+Ako treba nešto dodatno razjasniti oko opcija integracije stojim na raspolaganju.
+
+ 
+
+ 
+
+Lijep pozdrav/Best Regards

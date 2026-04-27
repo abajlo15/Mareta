@@ -8,6 +8,7 @@ const productSchema = z.object({
   price: z.number().positive(),
   images: z.array(z.string()).optional().default([]),
   categories: z.array(z.string()).optional().default([]),
+  audience: z.enum(["male", "female", "both"]).optional().default("both"),
   subcollection_id: z.string().uuid().optional().nullable(),
   stock: z.number().int().nonnegative().optional().default(0),
   discount_percentage: z.number().int().min(0).max(100).optional().default(0),
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('products')
-      .select('*, subcollection:subcollections(id, name)')
+      .select('*, subcollection:subcollections(id, name, gender, thumbnail_url)')
       .order('created_at', { ascending: false });
 
     if (search) {

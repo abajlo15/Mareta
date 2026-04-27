@@ -3,10 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import type { OrderInsert, OrderItemInsert } from '@/types/order';
 import { calculateOrderTotal } from '@/lib/pricing';
+import { sendOrderCreatedEmails } from '@/lib/email';
 
 const orderSchema = z.object({
   total_amount: z.number().positive(),
   payment_method: z.enum(['card', 'cash_on_delivery']).default('card'),
+  shipping_provider: z.enum(['internal', 'boxnow']).default('internal'),
+  shipping_method: z.enum(['standard', 'boxnow_locker']).default('standard'),
   shipping_address: z.object({
     full_name: z.string(),
     email: z.string().email(),
@@ -25,6 +28,11 @@ const orderSchema = z.object({
     })
   ),
   payment_intent_id: z.string().optional(),
+  boxnow_locker_id: z.string().optional(),
+  boxnow_locker_name: z.string().optional(),
+  boxnow_locker_address: z.string().optional(),
+  boxnow_payment_mode: z.enum(['prepaid', 'cod']).optional(),
+  boxnow_amount_to_be_collected: z.number().min(0).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -82,8 +90,17 @@ export async function POST(request: NextRequest) {
           user_id: user?.id ?? null,
           total_amount: totalAmount,
           payment_method: validatedData.payment_method,
+          shipping_provider: validatedData.shipping_provider,
+          shipping_method: validatedData.shipping_method,
           shipping_address: validatedData.shipping_address,
           payment_intent_id: validatedData.payment_intent_id,
+          boxnow_locker_id: validatedData.boxnow_locker_id ?? null,
+          boxnow_locker_name: validatedData.boxnow_locker_name ?? null,
+          boxnow_locker_address: validatedData.boxnow_locker_address ?? null,
+          boxnow_payment_mode: validatedData.boxnow_payment_mode ?? null,
+          boxnow_amount_to_be_collected: validatedData.boxnow_amount_to_be_collected ?? 0,
+          boxnow_sync_status:
+            validatedData.shipping_provider === 'boxnow' ? 'pending' : 'not_required',
           status: 'pending',
         },
       ])
@@ -131,6 +148,19 @@ export async function POST(request: NextRequest) {
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+
+    try {
+      await sendOrderCreatedEmails({
+        id: completeOrder.id,
+        total_amount: Number(completeOrder.total_amount),
+        payment_method: completeOrder.payment_method,
+        shipping_provider: completeOrder.shipping_provider,
+        shipping_address: completeOrder.shipping_address,
+        order_items: completeOrder.order_items,
+      });
+    } catch (emailError) {
+      console.error(`Order ${completeOrder.id}: failed to send order emails`, emailError);
     }
 
     return NextResponse.json(completeOrder, { status: 201 });

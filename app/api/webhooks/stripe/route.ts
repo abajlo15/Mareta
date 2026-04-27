@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { syncOrderToBoxNow } from '@/lib/boxnow-sync';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -57,6 +58,12 @@ export async function POST(request: Request) {
           { error: 'DB update failed' },
           { status: 500 }
         );
+      }
+
+      try {
+        await syncOrderToBoxNow(orderId);
+      } catch (syncError) {
+        console.error('Webhook: BoxNow sync failed', syncError);
       }
     }
   }

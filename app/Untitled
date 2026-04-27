@@ -1,0 +1,1 @@
+BoxNow request failed (400): {"code":"P400","status":400,"jsonSchemaErrors":["/destination/locationId must be string; type: string","/destination must have required property 'addressLine1'; missingProperty: addressLine1","/destination must match a schema in anyOf;"]}

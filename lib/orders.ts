@@ -35,6 +35,13 @@ export async function createOrder(orderData: {
   }>;
   payment_method: 'card' | 'cash_on_delivery';
   payment_intent_id?: string;
+  shipping_provider?: 'internal' | 'boxnow';
+  shipping_method?: 'standard' | 'boxnow_locker';
+  boxnow_locker_id?: string;
+  boxnow_locker_name?: string;
+  boxnow_locker_address?: string;
+  boxnow_payment_mode?: 'prepaid' | 'cod';
+  boxnow_amount_to_be_collected?: number;
 }): Promise<OrderWithItems> {
   const response = await fetch('/api/orders', {
     method: 'POST',

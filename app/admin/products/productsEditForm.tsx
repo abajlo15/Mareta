@@ -9,6 +9,7 @@ type Product = {
   description: string | null;
   price: number;
   categories?: string[] | null;
+  audience?: "male" | "female" | "both" | null;
   subcollection_id?: string | null;
   stock?: number;
   is_polarized?: boolean;
@@ -19,6 +20,8 @@ type Product = {
 type Subcollection = {
   id: string;
   name: string;
+  gender: "male" | "female";
+  thumbnail_url: string | null;
 };
 
 export default function AdminProductEditForm({
@@ -29,14 +32,11 @@ export default function AdminProductEditForm({
   subcollections: Subcollection[];
 }) {
   const router = useRouter();
-  const COLLECTIONS = ["Muška kolekcija", "Ženska kolekcija"];
-
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState<string>(String(product.price));
-  const [selectedCollections, setSelectedCollections] = useState<string[]>(
-    product.categories ?? []
-  );
+  const [audience, setAudience] = useState<"male" | "female" | "both">(product.audience ?? "both");
+  const [categoriesInput, setCategoriesInput] = useState((product.categories ?? []).join(", "));
   const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
   const [discountPercentage, setDiscountPercentage] = useState<string>(
@@ -54,7 +54,8 @@ export default function AdminProductEditForm({
     setName(product.name);
     setDescription(product.description ?? "");
     setPrice(String(product.price));
-    setSelectedCollections(product.categories ?? []);
+    setAudience(product.audience ?? "both");
+    setCategoriesInput((product.categories ?? []).join(", "));
     setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
     setDiscountPercentage(String(product.discount_percentage ?? 0));
@@ -101,13 +102,9 @@ export default function AdminProductEditForm({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function toggleCollection(collection: string) {
-    setSelectedCollections((prev) =>
-      prev.includes(collection)
-        ? prev.filter((item) => item !== collection)
-        : [...prev, collection]
-    );
-  }
+  const filteredSubcollections = subcollections.filter((item) =>
+    audience === "both" ? true : item.gender === audience
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -122,7 +119,11 @@ export default function AdminProductEditForm({
         description: description || null,
         price: parseFloat(price),
         discountPercentage: Math.max(0, Math.min(100, parseInt(discountPercentage, 10) || 0)),
-        categories: selectedCollections,
+        audience,
+        categories: categoriesInput
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
         subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
@@ -227,20 +228,32 @@ export default function AdminProductEditForm({
         </div>
       </div>
 
-      <div>
-        <p className="block text-sm font-medium mb-2">Kolekcije</p>
+      <div className="space-y-2">
+        <p className="block text-sm font-medium">Kolekcija</p>
         <div className="space-y-2">
-          {COLLECTIONS.map((collection) => (
-            <label key={collection} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={selectedCollections.includes(collection)}
-                onChange={() => toggleCollection(collection)}
-              />
-              <span>{collection}</span>
-            </label>
-          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "male"} onChange={() => { setAudience("male"); setSubcollectionId(""); }} />
+            <span>Muška kolekcija</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "female"} onChange={() => { setAudience("female"); setSubcollectionId(""); }} />
+            <span>Ženska kolekcija</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" checked={audience === "both"} onChange={() => { setAudience("both"); setSubcollectionId(""); }} />
+            <span>Oboje</span>
+          </label>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Tagovi (categories)</label>
+        <input
+          className="w-full border border-slate-300 rounded px-3 py-2"
+          placeholder="npr. premium, novo"
+          value={categoriesInput}
+          onChange={(e) => setCategoriesInput(e.target.value)}
+        />
       </div>
 
       <div>
@@ -249,14 +262,18 @@ export default function AdminProductEditForm({
           className="w-full border border-slate-300 rounded px-3 py-2"
           value={subcollectionId}
           onChange={(e) => setSubcollectionId(e.target.value)}
+          required
         >
-          <option value="">— Bez podkolekcije —</option>
-          {subcollections.map((subcollection) => (
+          <option value="">— Odaberi podkolekciju —</option>
+          {filteredSubcollections.map((subcollection) => (
             <option key={subcollection.id} value={subcollection.id}>
-              {subcollection.name}
+              {subcollection.name} {subcollection.gender === "male" ? "(Muška)" : "(Ženska)"}
             </option>
           ))}
         </select>
+        <p className="text-xs text-slate-500 mt-1">
+          Za "Oboje" možeš odabrati mušku ili žensku podkolekciju.
+        </p>
       </div>
 
       <div>
