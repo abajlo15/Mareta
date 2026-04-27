@@ -167,7 +167,7 @@ export async function syncOrderToBoxNow(orderId: string): Promise<void> {
         name: item?.product?.name || 'Order package',
         value: Number(order.total_amount).toFixed(2),
         weight: totalWeightKg,
-        compartmentSize: 1,
+        compartmentSize: 1 as const,
       },
     ],
   };
