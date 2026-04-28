@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const GENDERS = ["male", "female"] as const;
-type Gender = (typeof GENDERS)[number];
-
-const isValidGender = (value: unknown): value is Gender =>
-  typeof value === "string" && GENDERS.includes(value as Gender);
-
 export async function GET(request: NextRequest) {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -14,14 +8,14 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
-    const genderParam = request.nextUrl.searchParams.get("gender");
+    const collectionIdParam = request.nextUrl.searchParams.get("collectionId");
     let query = supabase
       .from('subcollections')
-      .select('id, name, gender, thumbnail_url')
+      .select('id, name, thumbnail_url, collection_id')
       .order('name', { ascending: true });
 
-    if (isValidGender(genderParam)) {
-      query = query.eq("gender", genderParam);
+    if (collectionIdParam) {
+      query = query.eq("collection_id", collectionIdParam);
     }
 
     const { data, error } = await query;

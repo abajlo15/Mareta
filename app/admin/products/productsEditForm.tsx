@@ -17,13 +17,6 @@ type Product = {
   images?: string[] | null;
 };
 
-type Subcollection = {
-  id: string;
-  name: string;
-  gender: "male" | "female";
-  thumbnail_url: string | null;
-};
-
 type Collection = {
   id: string;
   name: string;
@@ -33,11 +26,9 @@ type Collection = {
 
 export default function AdminProductEditForm({
   product,
-  subcollections,
   collections,
 }: {
   product: Product;
-  subcollections: Subcollection[];
   collections: Collection[];
 }) {
   const router = useRouter();
@@ -46,7 +37,6 @@ export default function AdminProductEditForm({
   const [price, setPrice] = useState<string>(String(product.price));
   const [collectionIds, setCollectionIds] = useState<string[]>(product.collection_ids ?? []);
   const [categoriesInput, setCategoriesInput] = useState((product.categories ?? []).join(", "));
-  const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
   const [discountPercentage, setDiscountPercentage] = useState<string>(
     String(product.discount_percentage ?? 0)
@@ -65,7 +55,6 @@ export default function AdminProductEditForm({
     setPrice(String(product.price));
     setCollectionIds(product.collection_ids ?? []);
     setCategoriesInput((product.categories ?? []).join(", "));
-    setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
     setDiscountPercentage(String(product.discount_percentage ?? 0));
     setIsPolarized(product.is_polarized ?? false);
@@ -117,7 +106,6 @@ export default function AdminProductEditForm({
         ? current.filter((id) => id !== collectionId)
         : [...current, collectionId]
     );
-    setSubcollectionId("");
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,10 +113,6 @@ export default function AdminProductEditForm({
     setError(null);
     if (!collectionIds.length) {
       setError("Odaberi barem jednu kolekciju.");
-      return;
-    }
-    if (!subcollectionId) {
-      setError("Podkolekcija je obavezna.");
       return;
     }
     setLoading(true);
@@ -146,7 +130,7 @@ export default function AdminProductEditForm({
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
-        subcollectionId: subcollectionId || null,
+        subcollectionId: null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
         images,
@@ -274,26 +258,6 @@ export default function AdminProductEditForm({
           value={categoriesInput}
           onChange={(e) => setCategoriesInput(e.target.value)}
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Podkolekcija</label>
-        <select
-          className="w-full border border-slate-300 rounded px-3 py-2"
-          value={subcollectionId}
-          onChange={(e) => setSubcollectionId(e.target.value)}
-          required
-        >
-          <option value="">— Odaberi podkolekciju —</option>
-          {subcollections.map((subcollection) => (
-            <option key={subcollection.id} value={subcollection.id}>
-              {subcollection.name} {subcollection.gender === "male" ? "(Muška)" : "(Ženska)"}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-slate-500 mt-1">
-          Podkolekcija je neovisna o odabiru kolekcija.
-        </p>
       </div>
 
       <div>

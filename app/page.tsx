@@ -107,6 +107,9 @@ export default function Home() {
         onMouseEnter={() => setIsHeroPaused(true)}
         onMouseLeave={() => setIsHeroPaused(false)}
       >
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary-950 via-slate-900 to-dark-900" />
+        <div className="absolute -z-10 -top-28 -left-24 h-72 w-72 rounded-full bg-primary-500/30 blur-3xl" />
+        <div className="absolute -z-10 -bottom-24 -right-24 h-80 w-80 rounded-full bg-accent-500/25 blur-3xl" />
         <div className="absolute inset-0">
           {heroImages.map((imageSrc, index) => (
             <Image
@@ -121,21 +124,42 @@ export default function Home() {
               }`}
             />
           ))}
-          <div className="absolute inset-0 bg-dark-900/28 transition-colors duration-500 group-hover:bg-dark-900/22" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/35 to-black/65 transition-colors duration-500 group-hover:from-black/55 group-hover:to-black/60" />
+          <div className="absolute inset-0 [background:radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0)_34%),radial-gradient(circle_at_80%_85%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_32%)]" />
+          <div className="absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:36px_36px]" />
+          <div className="pointer-events-none absolute inset-3 sm:inset-6">
+            <span className="absolute left-0 top-0 h-6 w-6 sm:h-10 sm:w-10 border-l border-t sm:border-l-2 sm:border-t-2 border-white/40 sm:border-white/45" />
+            <span className="absolute right-0 top-0 h-6 w-6 sm:h-10 sm:w-10 border-r border-t sm:border-r-2 sm:border-t-2 border-white/40 sm:border-white/45" />
+            <span className="absolute left-0 bottom-0 h-6 w-6 sm:h-10 sm:w-10 border-l border-b sm:border-l-2 sm:border-b-2 border-white/40 sm:border-white/45" />
+            <span className="absolute right-0 bottom-0 h-6 w-6 sm:h-10 sm:w-10 border-r border-b sm:border-r-2 sm:border-b-2 border-white/40 sm:border-white/45" />
+          </div>
         </div>
-        <div className="relative container mx-auto px-4 py-12 sm:py-16 lg:py-24 text-center min-h-[65vh] sm:min-h-[72vh] lg:min-h-[82vh] flex flex-col items-center justify-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-elegant font-bold mb-6 bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
-            Dobrodošli u Mareta
-          </h1>
-          <p className="text-lg sm:text-xl lg:text-2xl text-white mb-10 font-light">
-            Elegantne sunčane naočale za modernu ženu
-          </p>
-          <Link
-            href="/products"
-            className="inline-block bg-gradient-to-r from-primary-600 to-primary-700 text-white px-10 py-4 rounded-full hover:from-primary-500 hover:to-primary-600 transition-all duration-300 font-semibold shadow-elegant hover:shadow-lg transform hover:-translate-y-1"
-          >
-            Otkrij kolekciju
-          </Link>
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 min-h-[65vh] sm:min-h-[72vh] lg:min-h-[82vh] flex items-center">
+          <div className="relative w-full max-w-3xl text-left">
+            <div className="mb-4 sm:mb-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 sm:px-4 py-1.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.25em] text-white/85 backdrop-blur-sm">
+              Nova sezona
+            </div>
+            <h1 className="relative text-3xl sm:text-5xl lg:text-6xl font-elegant font-bold mb-4 sm:mb-5 text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)] leading-tight">
+              Dobrodošli u Mareta
+            </h1>
+            <p className="relative text-base sm:text-xl lg:text-2xl text-white/90 mb-7 sm:mb-9 font-light max-w-2xl">
+              Elegantne sunčane naočale za modernu ženu
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              <Link
+                href="/products"
+                className="relative inline-block bg-gradient-to-r from-primary-600 to-primary-700 text-white px-7 sm:px-10 py-3 sm:py-4 rounded-full hover:from-primary-500 hover:to-primary-600 transition-all duration-300 font-semibold shadow-elegant hover:shadow-lg transform hover:-translate-y-1 text-sm sm:text-base"
+              >
+                Otkrij kolekciju
+              </Link>
+              <Link
+                href="/galerija"
+                className="inline-block rounded-full border border-white/40 bg-white/10 px-5 sm:px-7 py-2.5 sm:py-3 text-white hover:bg-white/20 transition-colors duration-300 backdrop-blur-sm text-sm sm:text-base"
+              >
+                Pogledaj galeriju
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -2,25 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
-const GENDERS = ["male", "female"] as const;
-type Gender = (typeof GENDERS)[number];
-
-const isValidGender = (value: unknown): value is Gender =>
-  typeof value === "string" && GENDERS.includes(value as Gender);
-
 export async function GET(request: NextRequest) {
   await requireAdmin();
   const supabase = await createSupabaseServerClient();
-  const genderParam = request.nextUrl.searchParams.get("gender");
 
   let query = supabase
     .from("subcollections")
-    .select("id, name, gender, thumbnail_url")
+    .select("id, name, thumbnail_url, collection_id")
     .order("name", { ascending: true });
-
-  if (isValidGender(genderParam)) {
-    query = query.eq("gender", genderParam);
-  }
 
   const { data, error } = await query;
 
@@ -37,7 +26,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const gender = body?.gender;
+  const collectionId = typeof body?.collectionId === "string" ? body.collectionId.trim() : "";
   const thumbnailUrl =
     typeof body?.thumbnailUrl === "string" && body.thumbnailUrl.trim()
       ? body.thumbnailUrl.trim()
@@ -46,14 +35,23 @@ export async function POST(request: Request) {
   if (!name) {
     return NextResponse.json({ error: "Naziv podkolekcije je obavezan." }, { status: 400 });
   }
-  if (!isValidGender(gender)) {
-    return NextResponse.json({ error: "Odaberi valjanu grupu podkolekcije." }, { status: 400 });
+  if (!collectionId) {
+    return NextResponse.json({ error: "Odaberi valjanu kolekciju." }, { status: 400 });
+  }
+
+  const { data: selectedCollection, error: selectedCollectionError } = await supabase
+    .from("collections")
+    .select("id")
+    .eq("id", collectionId)
+    .single();
+  if (selectedCollectionError || !selectedCollection) {
+    return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
   }
 
   const { data, error } = await supabase
     .from("subcollections")
-    .insert({ name, gender, thumbnail_url: thumbnailUrl })
-    .select("id, name, gender, thumbnail_url")
+    .insert({ name, collection_id: collectionId, thumbnail_url: thumbnailUrl })
+    .select("id, name, thumbnail_url, collection_id")
     .single();
 
   if (error) {

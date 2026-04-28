@@ -18,10 +18,6 @@ export default async function AdminProductEditPage({ params }: Params) {
     .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, product_collections(collection_id)")
     .eq("id", id)
     .single();
-  const { data: subcollections } = await supabase
-    .from("subcollections")
-    .select("id, name, gender, thumbnail_url")
-    .order("name", { ascending: true });
   const { data: collections } = await supabase
     .from("collections")
     .select("id, name, slug, thumbnail_url")
@@ -47,7 +43,6 @@ export default async function AdminProductEditPage({ params }: Params) {
           ...product,
           collection_ids: (product.product_collections ?? []).map((item) => item.collection_id),
         }}
-        subcollections={subcollections ?? []}
         collections={collections ?? []}
       />
     </div>

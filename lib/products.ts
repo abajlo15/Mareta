@@ -3,8 +3,8 @@ import type { Product } from '@/types/product';
 export type Subcollection = {
   id: string;
   name: string;
-  gender: 'male' | 'female';
   thumbnail_url: string | null;
+  collection_id: string;
 };
 
 export type Collection = {
@@ -74,15 +74,17 @@ export async function fetchFeaturedProducts(): Promise<Product[]> {
   }
 }
 
-export async function fetchSubcollections(gender?: 'male' | 'female'): Promise<Subcollection[]> {
+export async function fetchSubcollections(filters?: {
+  collectionId?: string;
+}): Promise<Subcollection[]> {
   try {
     const baseUrl = typeof window !== 'undefined'
       ? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     const params = new URLSearchParams();
-    if (gender) {
-      params.set('gender', gender);
+    if (filters?.collectionId) {
+      params.set('collectionId', filters.collectionId);
     }
 
     const queryString = params.toString();

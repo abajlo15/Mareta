@@ -3,11 +3,6 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 type Params = { params: Promise<{ id: string }> };
-const GENDERS = ["male", "female"] as const;
-type Gender = (typeof GENDERS)[number];
-
-const isValidGender = (value: unknown): value is Gender =>
-  typeof value === "string" && GENDERS.includes(value as Gender);
 
 export async function PATCH(request: Request, { params }: Params) {
   await requireAdmin();
@@ -16,7 +11,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const body = await request.json();
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const gender = body?.gender;
+  const collectionId = typeof body?.collectionId === "string" ? body.collectionId.trim() : "";
   const thumbnailUrl =
     typeof body?.thumbnailUrl === "string" && body.thumbnailUrl.trim()
       ? body.thumbnailUrl.trim()
@@ -25,15 +20,24 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!name) {
     return NextResponse.json({ error: "Naziv podkolekcije je obavezan." }, { status: 400 });
   }
-  if (!isValidGender(gender)) {
-    return NextResponse.json({ error: "Odaberi valjanu grupu podkolekcije." }, { status: 400 });
+  if (!collectionId) {
+    return NextResponse.json({ error: "Odaberi valjanu kolekciju." }, { status: 400 });
+  }
+
+  const { data: selectedCollection, error: selectedCollectionError } = await supabase
+    .from("collections")
+    .select("id")
+    .eq("id", collectionId)
+    .single();
+  if (selectedCollectionError || !selectedCollection) {
+    return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
   }
 
   const { data, error } = await supabase
     .from("subcollections")
-    .update({ name, gender, thumbnail_url: thumbnailUrl })
+    .update({ name, collection_id: collectionId, thumbnail_url: thumbnailUrl })
     .eq("id", id)
-    .select("id, name, gender, thumbnail_url")
+    .select("id, name, thumbnail_url, collection_id")
     .single();
 
   if (error) {

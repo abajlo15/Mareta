@@ -28,6 +28,14 @@ type OrderRow = {
 const AVERAGE_SUNGLASSES_WEIGHT_KG = 0.035;
 // Packaging (box, filler, label) adds baseline shipping weight per parcel.
 const PACKAGE_BASE_WEIGHT_KG = 0.1;
+// Business rule: BoxNow sender on label must always be fixed (not derived from checkout/customer data).
+const BOXNOW_FIXED_SENDER = {
+  name: 'Mareta Hr',
+  email: 'maretasunglasseshr@gmail.com',
+  addressLine1: '23 000 Zadar',
+  postalCode: '23000',
+  country: 'HR',
+} as const;
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -129,12 +137,7 @@ export async function syncOrderToBoxNow(orderId: string): Promise<void> {
 
   const warehouseId = toBoxNowLocationId(requireEnv('BOXNOW_WAREHOUSE_ID'), 'BOXNOW_WAREHOUSE_ID');
   const destinationLocationId = toBoxNowLocationId(lockerId, 'BoxNow locker ID');
-  const partnerName = process.env.BOXNOW_ORIGIN_NAME || 'Mareta Shop';
-  const partnerPhone = normalizePhone(process.env.BOXNOW_ORIGIN_PHONE || shipping.phone);
-  const partnerEmail = process.env.BOXNOW_ORIGIN_EMAIL || shipping.email || 'noreply@example.com';
-  const partnerAddressLine1 = process.env.BOXNOW_ORIGIN_ADDRESS_LINE1 || '23 000 Zadar';
-  const partnerPostalCode = process.env.BOXNOW_ORIGIN_POSTAL_CODE || '23000';
-  const partnerCountry = process.env.BOXNOW_ORIGIN_COUNTRY || 'HR';
+  const partnerPhone = normalizePhone(requireEnv('BOXNOW_ORIGIN_PHONE'));
 
   const paymentMode: 'cod' | 'prepaid' =
     order.payment_method === 'cash_on_delivery' ? 'cod' : 'prepaid';
@@ -154,14 +157,14 @@ export async function syncOrderToBoxNow(orderId: string): Promise<void> {
     allowReturn: true,
     origin: {
       contactNumber: partnerPhone,
-      contactEmail: partnerEmail,
-      contactName: partnerName,
+      contactEmail: BOXNOW_FIXED_SENDER.email,
+      contactName: BOXNOW_FIXED_SENDER.name,
       locationId: String(warehouseId),
-      title: partnerName,
-      name: partnerName,
-      addressLine1: partnerAddressLine1,
-      postalCode: partnerPostalCode,
-      country: partnerCountry,
+      title: BOXNOW_FIXED_SENDER.name,
+      name: BOXNOW_FIXED_SENDER.name,
+      addressLine1: BOXNOW_FIXED_SENDER.addressLine1,
+      postalCode: BOXNOW_FIXED_SENDER.postalCode,
+      country: BOXNOW_FIXED_SENDER.country,
     },
     destination: {
       contactNumber: normalizePhone(shipping.phone),

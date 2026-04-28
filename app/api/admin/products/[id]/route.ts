@@ -38,22 +38,8 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!uniqueCollectionIds.length) {
       return NextResponse.json({ error: "Odaberi barem jednu kolekciju." }, { status: 400 });
     }
-    if (typeof subcollectionId !== "string" || !subcollectionId.trim()) {
-      return NextResponse.json(
-        { error: "Podkolekcija je obavezna." },
-        { status: 400 }
-      );
-    }
-
-    const { data: selectedSubcollection, error: subcollectionError } = await supabase
-      .from("subcollections")
-      .select("id")
-      .eq("id", subcollectionId)
-      .single();
-
-    if (subcollectionError || !selectedSubcollection) {
-      return NextResponse.json({ error: "Odabrana podkolekcija ne postoji." }, { status: 400 });
-    }
+    const normalizedSubcollectionId =
+      typeof subcollectionId === "string" && subcollectionId.trim() ? subcollectionId.trim() : null;
 
     const { data: selectedCollections, error: selectedCollectionsError } = await supabase
       .from("collections")
@@ -65,6 +51,23 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     if ((selectedCollections ?? []).length !== uniqueCollectionIds.length) {
       return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
+    }
+    if (normalizedSubcollectionId) {
+      const { data: selectedSubcollection, error: subcollectionError } = await supabase
+        .from("subcollections")
+        .select("id, collection_id")
+        .eq("id", normalizedSubcollectionId)
+        .single();
+
+      if (subcollectionError || !selectedSubcollection) {
+        return NextResponse.json({ error: "Odabrana podkolekcija ne postoji." }, { status: 400 });
+      }
+      if (!uniqueCollectionIds.includes(selectedSubcollection.collection_id)) {
+        return NextResponse.json(
+          { error: "Odabrana podkolekcija ne pripada nijednoj od odabranih kolekcija." },
+          { status: 400 }
+        );
+      }
     }
 
     const stockValue = typeof stock === "number" ? Math.max(0, stock) : 0;
@@ -80,7 +83,7 @@ export async function PATCH(request: Request, { params }: Params) {
         description: description ?? null,
         price,
         categories: Array.isArray(categories) ? categories : [],
-        subcollection_id: subcollectionId,
+        subcollection_id: normalizedSubcollectionId,
         stock: stockValue,
         is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
         discount_percentage: discountValue,

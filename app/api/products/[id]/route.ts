@@ -23,7 +23,7 @@ export async function GET(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*, subcollection:subcollections(id, name, gender, thumbnail_url), product_collections(collection:collections(id, name, slug, thumbnail_url))')
+      .select('*, subcollection:subcollections(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))')
       .eq('id', id)
       .single();
 

@@ -2,7 +2,6 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import AdminProductsForm from "./productsForm";
 import AdminProductsList from "./productsList";
-import AdminSubcollectionsManager from "./subcollectionsManager";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +14,16 @@ type ProductRow = {
   categories?: string[] | null;
   subcollection_id?: string | null;
   subcollection?:
-    | { name: string; gender: "male" | "female"; thumbnail_url: string | null }[]
-    | { name: string; gender: "male" | "female"; thumbnail_url: string | null }
+    | {
+        name: string;
+        thumbnail_url: string | null;
+        collection_id: string;
+      }[]
+    | {
+        name: string;
+        thumbnail_url: string | null;
+        collection_id: string;
+      }
     | null;
   stock?: number;
   is_polarized?: boolean;
@@ -35,12 +42,8 @@ export default async function AdminProductsPage() {
   const supabase = await createSupabaseServerClient();
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, subcollection_id, subcollection:subcollections(name, gender, thumbnail_url), stock, is_polarized, images, product_collections(collection:collections(id, name, slug, thumbnail_url))")
+    .select("id, name, description, price, discount_percentage, categories, subcollection_id, subcollection:subcollections(name, thumbnail_url, collection_id), stock, is_polarized, images, product_collections(collection:collections(id, name, slug, thumbnail_url))")
     .order("created_at", { ascending: false });
-  const { data: subcollections } = await supabase
-    .from("subcollections")
-    .select("id, name, gender, thumbnail_url")
-    .order("name", { ascending: true });
   const { data: collections } = await supabase
     .from("collections")
     .select("id, name, slug, thumbnail_url")
@@ -63,9 +66,7 @@ export default async function AdminProductsPage() {
     <div className="space-y-8">
       <h2 className="text-xl sm:text-2xl font-semibold">Artikli</h2>
 
-      <AdminSubcollectionsManager initialSubcollections={subcollections ?? []} />
-
-      <AdminProductsForm subcollections={subcollections ?? []} collections={collections ?? []} />
+      <AdminProductsForm collections={collections ?? []} />
 
       <AdminProductsList products={normalizedProducts} />
     </div>

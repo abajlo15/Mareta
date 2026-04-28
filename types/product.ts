@@ -16,14 +16,14 @@ export interface Product {
     | {
         id: string;
         name: string;
-        gender: "male" | "female";
         thumbnail_url: string | null;
+        collection_id: string;
       }
     | {
         id: string;
         name: string;
-        gender: "male" | "female";
         thumbnail_url: string | null;
+        collection_id: string;
       }[]
     | null;
   collections?: {

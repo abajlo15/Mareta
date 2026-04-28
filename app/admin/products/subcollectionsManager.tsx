@@ -5,29 +5,45 @@ import { useRef, useState } from "react";
 type Subcollection = {
   id: string;
   name: string;
-  gender: "male" | "female";
   thumbnail_url: string | null;
+  collection_id: string;
+};
+
+type Collection = {
+  id: string;
+  name: string;
 };
 
 export default function AdminSubcollectionsManager({
   initialSubcollections,
+  collections,
 }: {
   initialSubcollections: Subcollection[];
+  collections: Collection[];
 }) {
   const [name, setName] = useState("");
-  const [gender, setGender] = useState<"male" | "female">("male");
+  const [collectionId, setCollectionId] = useState<string>(collections[0]?.id ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [editingGender, setEditingGender] = useState<"male" | "female">("male");
+  const [editingCollectionId, setEditingCollectionId] = useState("");
   const [editingThumbnailUrl, setEditingThumbnailUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [listCollectionFilter, setListCollectionFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const collectionNameById = collections.reduce<Record<string, string>>((acc, item) => {
+    acc[item.id] = item.name;
+    return acc;
+  }, {});
+  const visibleSubcollections =
+    listCollectionFilter === "all"
+      ? initialSubcollections
+      : initialSubcollections.filter((item) => item.collection_id === listCollectionFilter);
 
   async function uploadImage(file: File) {
     const formData = new FormData();
@@ -82,12 +98,20 @@ export default function AdminSubcollectionsManager({
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!collectionId) {
+      setError("Odaberi nad-kolekciju.");
+      return;
+    }
     setLoading(true);
 
     const res = await fetch("/api/admin/subcollections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, gender, thumbnailUrl: thumbnailUrl || null }),
+      body: JSON.stringify({
+        name,
+        collectionId,
+        thumbnailUrl: thumbnailUrl || null,
+      }),
     });
 
     setLoading(false);
@@ -99,7 +123,7 @@ export default function AdminSubcollectionsManager({
     }
 
     setName("");
-    setGender("male");
+    setCollectionId(collections[0]?.id ?? "");
     setThumbnailUrl("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -109,6 +133,10 @@ export default function AdminSubcollectionsManager({
 
   async function handleUpdate(id: string) {
     setError(null);
+    if (!editingCollectionId) {
+      setError("Odaberi nad-kolekciju.");
+      return;
+    }
     setActionLoadingId(id);
 
     const res = await fetch(`/api/admin/subcollections/${id}`, {
@@ -116,7 +144,7 @@ export default function AdminSubcollectionsManager({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: editingName,
-        gender: editingGender,
+        collectionId: editingCollectionId,
         thumbnailUrl: editingThumbnailUrl || null,
       }),
     });
@@ -131,7 +159,7 @@ export default function AdminSubcollectionsManager({
 
     setEditingId(null);
     setEditingName("");
-    setEditingGender("male");
+    setEditingCollectionId("");
     setEditingThumbnailUrl("");
     if (editFileInputRef.current) {
       editFileInputRef.current.value = "";
@@ -161,9 +189,6 @@ export default function AdminSubcollectionsManager({
     window.location.reload();
   }
 
-  const maleSubcollections = initialSubcollections.filter((item) => item.gender === "male");
-  const femaleSubcollections = initialSubcollections.filter((item) => item.gender === "female");
-
   return (
     <div className="space-y-3 max-w-2xl border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
       <h3 className="text-lg font-semibold">Podkolekcije</h3>
@@ -183,11 +208,16 @@ export default function AdminSubcollectionsManager({
         />
         <select
           className="w-full border border-slate-300 rounded px-3 py-2"
-          value={gender}
-          onChange={(e) => setGender(e.target.value as "male" | "female")}
+          value={collectionId}
+          onChange={(e) => setCollectionId(e.target.value)}
+          required
         >
-          <option value="male">Muške podkolekcije</option>
-          <option value="female">Ženske podkolekcije</option>
+          <option value="">— Odaberi kolekciju —</option>
+          {collections.map((collection) => (
+            <option key={collection.id} value={collection.id}>
+              {collection.name}
+            </option>
+          ))}
         </select>
         <div>
           <label className="block text-sm font-medium mb-1">Thumbnail</label>
@@ -211,12 +241,24 @@ export default function AdminSubcollectionsManager({
         </button>
       </form>
 
-      <div className="grid md:grid-cols-2 gap-4 text-sm text-slate-700">
-        {[{ title: "Muške podkolekcije", data: maleSubcollections }, { title: "Ženske podkolekcije", data: femaleSubcollections }].map((group) => (
-          <div key={group.title} className="space-y-2">
-            <h4 className="font-semibold">{group.title}</h4>
-            {group.data.length ? (
-              group.data.map((item) => (
+      <div className="space-y-2 text-sm text-slate-700">
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <h4 className="font-semibold">Sve podkolekcije</h4>
+          <select
+            className="min-w-[220px] border border-slate-300 rounded px-3 py-2 text-sm"
+            value={listCollectionFilter}
+            onChange={(e) => setListCollectionFilter(e.target.value)}
+          >
+            <option value="all">Sve kolekcije</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {visibleSubcollections.length ? (
+          visibleSubcollections.map((item) => (
             <div key={item.id} className="flex items-center gap-2">
               {editingId === item.id ? (
                 <>
@@ -234,11 +276,16 @@ export default function AdminSubcollectionsManager({
                   />
                     <select
                       className="w-full border border-slate-300 rounded px-2 py-1"
-                      value={editingGender}
-                      onChange={(e) => setEditingGender(e.target.value as "male" | "female")}
+                      value={editingCollectionId}
+                      onChange={(e) => setEditingCollectionId(e.target.value)}
+                      required
                     >
-                      <option value="male">Muška</option>
-                      <option value="female">Ženska</option>
+                      <option value="">— Odaberi kolekciju —</option>
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={collection.id}>
+                          {collection.name}
+                        </option>
+                      ))}
                     </select>
                     <input
                       ref={editFileInputRef}
@@ -262,7 +309,7 @@ export default function AdminSubcollectionsManager({
                     onClick={() => {
                       setEditingId(null);
                       setEditingName("");
-                      setEditingGender("male");
+                      setEditingCollectionId("");
                       setEditingThumbnailUrl("");
                     }}
                     className="px-2 py-1 rounded bg-slate-200 text-slate-800 hover:bg-slate-300"
@@ -277,13 +324,18 @@ export default function AdminSubcollectionsManager({
                     alt=""
                     className="w-10 h-10 rounded object-cover border"
                   />
-                  <span className="flex-1 px-2 py-1 rounded bg-slate-100">{item.name}</span>
+                  <div className="flex-1 px-2 py-1 rounded bg-slate-100">
+                    <p>{item.name}</p>
+                    <p className="text-xs text-slate-500">
+                      Kolekcija: {collectionNameById[item.collection_id] ?? "Nepoznata kolekcija"}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
                       setEditingId(item.id);
                       setEditingName(item.name);
-                      setEditingGender(item.gender);
+                      setEditingCollectionId(item.collection_id);
                       setEditingThumbnailUrl(item.thumbnail_url ?? "");
                     }}
                     className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600"
@@ -301,12 +353,10 @@ export default function AdminSubcollectionsManager({
                 </>
               )}
             </div>
-              ))
-            ) : (
-              <p className="text-slate-500">Još nema podkolekcija.</p>
-            )}
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-slate-500">Nema podkolekcija za odabranu kolekciju.</p>
+        )}
       </div>
     </div>
   );

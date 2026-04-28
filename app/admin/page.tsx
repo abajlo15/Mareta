@@ -60,6 +60,14 @@ export default async function AdminHomePage() {
         </Link>
 
         <Link
+          href="/admin/subcollections"
+          className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
+        >
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">Podkolekcije</h2>
+          <p className="text-gray-600">Kreiraj i uredi podkolekcije te ih poveži s kolekcijama</p>
+        </Link>
+
+        <Link
           href="/admin/gallery"
           className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
         >

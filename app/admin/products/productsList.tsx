@@ -17,7 +17,7 @@ type Product = {
   discount_percentage?: number;
   categories?: string[] | null;
   collections?: { id: string; name: string; slug: string }[];
-  subcollection?: { name: string; gender: "male" | "female" } | null;
+  subcollection?: { name: string } | null;
   stock?: number;
   images?: string[] | null;
 };

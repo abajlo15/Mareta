@@ -88,6 +88,13 @@ export default function AdminSidebar() {
             Kolekcije
           </a>
           <a
+            href="/admin/subcollections"
+            className="block rounded px-3 py-2 hover:bg-slate-800"
+            onClick={() => setOpen(false)}
+          >
+            Podkolekcije
+          </a>
+          <a
             href="/admin/featured-products"
             className="block rounded px-3 py-2 hover:bg-slate-800"
             onClick={() => setOpen(false)}

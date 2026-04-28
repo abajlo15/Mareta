@@ -18,7 +18,7 @@ function ProductsPageContent() {
   const [search, setSearch] = useState('');
   const [subcollectionId, setSubcollectionId] = useState('');
   const [subcollections, setSubcollections] = useState<
-    { id: string; name: string; thumbnail_url: string | null }[]
+    { id: string; name: string; thumbnail_url: string | null; collection_id: string }[]
   >([]);
   const [collections, setCollections] = useState<
     { id: string; name: string; slug: string; thumbnail_url: string | null }[]
@@ -46,9 +46,14 @@ function ProductsPageContent() {
       setLoading(true);
       const loadedCollections = await fetchCollections();
 
+      const selectedCollectionId = loadedCollections.find(
+        (collection) => collection.slug === selectedCollectionParam
+      )?.id;
       const [data, allSubcollections] = await Promise.all([
         fetchProducts(),
-        fetchSubcollections(),
+        fetchSubcollections(
+          selectedCollectionId ? { collectionId: selectedCollectionId } : undefined
+        ),
       ]);
       setCollections(loadedCollections);
       setProducts(data);
