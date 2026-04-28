@@ -16,7 +16,10 @@ export default async function AdminGalleryPage() {
       .from("gallery_images")
       .select("id, image_url")
       .order("created_at", { ascending: false });
-    images = fallback.data;
+    images = (fallback.data ?? []).map((image) => ({
+      ...image,
+      position: 0,
+    }));
   }
 
   return (

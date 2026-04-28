@@ -16,7 +16,10 @@ export async function GET() {
       .from("gallery_images")
       .select("id, image_url, created_at")
       .order("created_at", { ascending: false });
-    data = fallback.data;
+    data = (fallback.data ?? []).map((image) => ({
+      ...image,
+      position: 0,
+    }));
     error = fallback.error;
   }
 
