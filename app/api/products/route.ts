@@ -8,7 +8,6 @@ const productSchema = z.object({
   price: z.number().positive(),
   images: z.array(z.string()).optional().default([]),
   categories: z.array(z.string()).optional().default([]),
-  audience: z.enum(["male", "female", "both"]).optional().default("both"),
   subcollection_id: z.string().uuid().optional().nullable(),
   stock: z.number().int().nonnegative().optional().default(0),
   discount_percentage: z.number().int().min(0).max(100).optional().default(0),
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('products')
-      .select('*, subcollection:subcollections(id, name, gender, thumbnail_url)')
+      .select('*, subcollection:subcollections(id, name, gender, thumbnail_url), product_collections(collection:collections(id, name, slug, thumbnail_url))')
       .order('created_at', { ascending: false });
 
     if (search) {
@@ -53,7 +52,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    const normalized = (data ?? []).map((product) => ({
+      ...product,
+      collections: (product.product_collections ?? [])
+        .map((item: { collection: unknown[] | unknown | null }) =>
+          Array.isArray(item.collection) ? (item.collection[0] ?? null) : item.collection
+        )
+        .filter(Boolean),
+    }));
+
+    return NextResponse.json(normalized);
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(

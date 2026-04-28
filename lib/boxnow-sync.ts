@@ -132,6 +132,9 @@ export async function syncOrderToBoxNow(orderId: string): Promise<void> {
   const partnerName = process.env.BOXNOW_ORIGIN_NAME || 'Mareta Shop';
   const partnerPhone = normalizePhone(process.env.BOXNOW_ORIGIN_PHONE || shipping.phone);
   const partnerEmail = process.env.BOXNOW_ORIGIN_EMAIL || shipping.email || 'noreply@example.com';
+  const partnerAddressLine1 = process.env.BOXNOW_ORIGIN_ADDRESS_LINE1 || '23 000 Zadar';
+  const partnerPostalCode = process.env.BOXNOW_ORIGIN_POSTAL_CODE || '23000';
+  const partnerCountry = process.env.BOXNOW_ORIGIN_COUNTRY || 'HR';
 
   const paymentMode: 'cod' | 'prepaid' =
     order.payment_method === 'cash_on_delivery' ? 'cod' : 'prepaid';
@@ -154,6 +157,11 @@ export async function syncOrderToBoxNow(orderId: string): Promise<void> {
       contactEmail: partnerEmail,
       contactName: partnerName,
       locationId: String(warehouseId),
+      title: partnerName,
+      name: partnerName,
+      addressLine1: partnerAddressLine1,
+      postalCode: partnerPostalCode,
+      country: partnerCountry,
     },
     destination: {
       contactNumber: normalizePhone(shipping.phone),

@@ -172,7 +172,11 @@ export default function ProductDetailPage() {
               <input
                 type="number"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) =>
+                  setQuantity(
+                    Math.min(product.stock, Math.max(1, parseInt(e.target.value, 10) || 1))
+                  )
+                }
                 min="1"
                 max={product.stock}
                 className="w-20 text-center border border-gray-300 rounded"

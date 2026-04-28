@@ -4,23 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import ProductCard from "@/components/ProductCard";
-import { fetchProducts } from "@/lib/products";
+import { fetchFeaturedProducts } from "@/lib/products";
+import { DEFAULT_GALLERY_IMAGES, fetchGalleryImages } from "@/lib/gallery";
 import type { Product } from "@/types/product";
-
-const heroImages = Array.from({ length: 10 }, (_, index) => `/slika${index + 1}.jpeg`);
-const FEATURED_LIMIT = 12;
-
-function shuffleProducts(products: Product[]) {
-  const shuffled = [...products];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [heroImages, setHeroImages] = useState<string[]>(DEFAULT_GALLERY_IMAGES);
   const [loading, setLoading] = useState(true);
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
@@ -30,9 +20,11 @@ export default function Home() {
 
   useEffect(() => {
     loadFeaturedProducts();
+    loadHeroImages();
   }, []);
 
   useEffect(() => {
+    if (!heroImages.length) return;
     if (isHeroPaused) return;
 
     const interval = window.setInterval(() => {
@@ -40,7 +32,7 @@ export default function Home() {
     }, 3500);
 
     return () => window.clearInterval(interval);
-  }, [isHeroPaused]);
+  }, [isHeroPaused, heroImages.length]);
 
   useEffect(() => {
     const updatePerView = () => {
@@ -82,9 +74,8 @@ export default function Home() {
   const loadFeaturedProducts = async () => {
     try {
       setLoading(true);
-      const products = await fetchProducts();
-      const randomizedProducts = shuffleProducts(products);
-      setFeaturedProducts(randomizedProducts.slice(0, FEATURED_LIMIT));
+      const products = await fetchFeaturedProducts();
+      setFeaturedProducts(products);
       setCurrentFeaturedSlide(0);
     } catch (error) {
       console.error('Error loading featured products:', error);
@@ -92,6 +83,12 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadHeroImages = async () => {
+    const images = await fetchGalleryImages();
+    setHeroImages(images);
+    setCurrentHeroImage(0);
   };
 
   const handleNextFeatured = () => {
@@ -119,16 +116,6 @@ export default function Home() {
               fill
               priority={index === 0}
               sizes="100vw"
-              style={{
-                objectPosition:
-                  imageSrc === '/slika4.jpeg'
-                    ? 'center 30%'
-                    : imageSrc === '/slika10.jpeg'
-                      ? 'center 30%'
-                      : imageSrc === '/slika7.jpeg' || imageSrc === '/slika8.jpeg'
-                      ? 'center 26%'
-                      : 'center center',
-              }}
               className={`object-cover transition-all duration-1000 ${
                 index === currentHeroImage ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-100'
               }`}

@@ -7,6 +7,13 @@ export type Subcollection = {
   thumbnail_url: string | null;
 };
 
+export type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail_url: string | null;
+};
+
 export async function fetchProducts(filters?: {
   search?: string;
   category?: string;
@@ -45,6 +52,28 @@ export async function fetchProducts(filters?: {
   }
 }
 
+export async function fetchFeaturedProducts(): Promise<Product[]> {
+  try {
+    const baseUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    const response = await fetch(`${baseUrl}/api/featured-products`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchSubcollections(gender?: 'male' | 'female'): Promise<Subcollection[]> {
   try {
     const baseUrl = typeof window !== 'undefined'
@@ -65,6 +94,23 @@ export async function fetchSubcollections(gender?: 'male' | 'female'): Promise<S
       return [];
     }
 
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchCollections(): Promise<Collection[]> {
+  try {
+    const baseUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/collections`, { cache: "no-store" });
+    if (!response.ok) {
+      return [];
+    }
     const data = await response.json();
     return Array.isArray(data) ? data : [];
   } catch {

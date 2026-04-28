@@ -6,12 +6,14 @@ import Link from 'next/link';
 import CartItem from '@/components/CartItem';
 import { getCart, updateCartItemQuantity, removeFromCart, clearCart } from '@/lib/cart';
 import { calculateShipping, calculateOrderTotal, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing';
+import { createClient } from '@/lib/supabase/client';
 import type { Cart } from '@/types/cart';
 
 export default function CartPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [cart, setCart] = useState<Cart>({ items: [], total: 0, itemCount: 0 });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const shipping = calculateShipping(cart.total);
   const totalWithShipping = calculateOrderTotal(cart.total);
   const amountUntilFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - cart.total);
@@ -22,6 +24,22 @@ export default function CartPage() {
 
   useEffect(() => {
     setCart(getCart());
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(Boolean(user));
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
@@ -131,13 +149,15 @@ export default function CartPage() {
             >
               {isPending ? 'Učitavanje...' : 'Nastavi na checkout'}
             </button>
-            <button
-              onClick={handleGuestCheckout}
-              disabled={isPending}
-              className="w-full mt-2 border border-primary-500 text-primary-700 py-3 px-4 rounded-lg hover:bg-primary-50 transition-all duration-200 font-semibold disabled:opacity-70 disabled:cursor-wait"
-            >
-              {isPending ? 'Učitavanje...' : 'Nastavi kao gost'}
-            </button>
+            {!isLoggedIn && (
+              <button
+                onClick={handleGuestCheckout}
+                disabled={isPending}
+                className="w-full mt-2 border border-primary-500 text-primary-700 py-3 px-4 rounded-lg hover:bg-primary-50 transition-all duration-200 font-semibold disabled:opacity-70 disabled:cursor-wait"
+              >
+                {isPending ? 'Učitavanje...' : 'Nastavi kao gost'}
+              </button>
+            )}
             <button
               onClick={() => {
                 clearCart();

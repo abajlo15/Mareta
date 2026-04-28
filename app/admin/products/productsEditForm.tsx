@@ -9,7 +9,7 @@ type Product = {
   description: string | null;
   price: number;
   categories?: string[] | null;
-  audience?: "male" | "female" | "both" | null;
+  collection_ids?: string[] | null;
   subcollection_id?: string | null;
   stock?: number;
   is_polarized?: boolean;
@@ -24,18 +24,27 @@ type Subcollection = {
   thumbnail_url: string | null;
 };
 
+type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail_url: string | null;
+};
+
 export default function AdminProductEditForm({
   product,
   subcollections,
+  collections,
 }: {
   product: Product;
   subcollections: Subcollection[];
+  collections: Collection[];
 }) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState<string>(String(product.price));
-  const [audience, setAudience] = useState<"male" | "female" | "both">(product.audience ?? "both");
+  const [collectionIds, setCollectionIds] = useState<string[]>(product.collection_ids ?? []);
   const [categoriesInput, setCategoriesInput] = useState((product.categories ?? []).join(", "));
   const [subcollectionId, setSubcollectionId] = useState<string>(product.subcollection_id ?? "");
   const [stock, setStock] = useState<string>(String(product.stock ?? 0));
@@ -54,7 +63,7 @@ export default function AdminProductEditForm({
     setName(product.name);
     setDescription(product.description ?? "");
     setPrice(String(product.price));
-    setAudience(product.audience ?? "both");
+    setCollectionIds(product.collection_ids ?? []);
     setCategoriesInput((product.categories ?? []).join(", "));
     setSubcollectionId(product.subcollection_id ?? "");
     setStock(String(product.stock ?? 0));
@@ -102,13 +111,26 @@ export default function AdminProductEditForm({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  const filteredSubcollections = subcollections.filter((item) =>
-    audience === "both" ? true : item.gender === audience
-  );
+  const toggleCollection = (collectionId: string) => {
+    setCollectionIds((current) =>
+      current.includes(collectionId)
+        ? current.filter((id) => id !== collectionId)
+        : [...current, collectionId]
+    );
+    setSubcollectionId("");
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!collectionIds.length) {
+      setError("Odaberi barem jednu kolekciju.");
+      return;
+    }
+    if (!subcollectionId) {
+      setError("Podkolekcija je obavezna.");
+      return;
+    }
     setLoading(true);
 
     const res = await fetch(`/api/admin/products/${product.id}`, {
@@ -119,7 +141,7 @@ export default function AdminProductEditForm({
         description: description || null,
         price: parseFloat(price),
         discountPercentage: Math.max(0, Math.min(100, parseInt(discountPercentage, 10) || 0)),
-        audience,
+        collectionIds,
         categories: categoriesInput
           .split(",")
           .map((item) => item.trim())
@@ -229,20 +251,18 @@ export default function AdminProductEditForm({
       </div>
 
       <div className="space-y-2">
-        <p className="block text-sm font-medium">Kolekcija</p>
+        <p className="block text-sm font-medium">Kolekcije</p>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={audience === "male"} onChange={() => { setAudience("male"); setSubcollectionId(""); }} />
-            <span>Muška kolekcija</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={audience === "female"} onChange={() => { setAudience("female"); setSubcollectionId(""); }} />
-            <span>Ženska kolekcija</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={audience === "both"} onChange={() => { setAudience("both"); setSubcollectionId(""); }} />
-            <span>Oboje</span>
-          </label>
+          {collections.map((collection) => (
+            <label key={collection.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={collectionIds.includes(collection.id)}
+                onChange={() => toggleCollection(collection.id)}
+              />
+              <span>{collection.name}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -265,14 +285,14 @@ export default function AdminProductEditForm({
           required
         >
           <option value="">— Odaberi podkolekciju —</option>
-          {filteredSubcollections.map((subcollection) => (
+          {subcollections.map((subcollection) => (
             <option key={subcollection.id} value={subcollection.id}>
               {subcollection.name} {subcollection.gender === "male" ? "(Muška)" : "(Ženska)"}
             </option>
           ))}
         </select>
         <p className="text-xs text-slate-500 mt-1">
-          Za "Oboje" možeš odabrati mušku ili žensku podkolekciju.
+          Podkolekcija je neovisna o odabiru kolekcija.
         </p>
       </div>
 

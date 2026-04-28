@@ -164,12 +164,6 @@ function CheckoutPageContent() {
   }, [router]);
 
   useEffect(() => {
-    if (isGuestCheckout) {
-      setPaymentOption('cash_on_delivery');
-    }
-  }, [isGuestCheckout]);
-
-  useEffect(() => {
     if (!isBoxNowSelected) {
       setShowBoxNowWidget(false);
     }
@@ -542,7 +536,6 @@ function CheckoutPageContent() {
                       value="boxnow"
                       checked={paymentOption === 'boxnow_card'}
                       onChange={() => setPaymentOption('boxnow_card')}
-                      disabled={isGuestCheckout}
                     />
                     <span>BoxNow (Za plaćanje karticom molimo koristiti ovu opciju)</span>
                   </label>

@@ -23,7 +23,7 @@ export async function GET(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, subcollection:subcollections(id, name, gender, thumbnail_url), product_collections(collection:collections(id, name, slug, thumbnail_url))')
       .eq('id', id)
       .single();
 
@@ -34,7 +34,16 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    const normalized = {
+      ...data,
+      collections: (data.product_collections ?? [])
+        .map((item: { collection: unknown[] | unknown | null }) =>
+          Array.isArray(item.collection) ? (item.collection[0] ?? null) : item.collection
+        )
+        .filter(Boolean),
+    };
+
+    return NextResponse.json(normalized);
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },

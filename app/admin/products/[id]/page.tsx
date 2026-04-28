@@ -15,12 +15,16 @@ export default async function AdminProductEditPage({ params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, audience, subcollection_id, stock, is_polarized, images")
+    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, product_collections(collection_id)")
     .eq("id", id)
     .single();
   const { data: subcollections } = await supabase
     .from("subcollections")
     .select("id, name, gender, thumbnail_url")
+    .order("name", { ascending: true });
+  const { data: collections } = await supabase
+    .from("collections")
+    .select("id, name, slug, thumbnail_url")
     .order("name", { ascending: true });
 
   if (error || !product) {
@@ -38,7 +42,14 @@ export default async function AdminProductEditPage({ params }: Params) {
         </Link>
       </div>
       <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold break-words">Uredi artikl: {product.name}</h2>
-      <AdminProductEditForm product={product} subcollections={subcollections ?? []} />
+      <AdminProductEditForm
+        product={{
+          ...product,
+          collection_ids: (product.product_collections ?? []).map((item) => item.collection_id),
+        }}
+        subcollections={subcollections ?? []}
+        collections={collections ?? []}
+      />
     </div>
   );
 }

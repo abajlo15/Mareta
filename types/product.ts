@@ -5,7 +5,6 @@ export interface Product {
   price: number;
   images: string[];
   categories: string[];
-  audience: "male" | "female" | "both";
   subcollection_id: string | null;
   stock: number;
   is_polarized: boolean;
@@ -27,6 +26,12 @@ export interface Product {
         thumbnail_url: string | null;
       }[]
     | null;
+  collections?: {
+    id: string;
+    name: string;
+    slug: string;
+    thumbnail_url: string | null;
+  }[];
 }
 
 export interface ProductInsert {
@@ -35,8 +40,8 @@ export interface ProductInsert {
   price: number;
   images?: string[];
   categories?: string[];
-  audience?: "male" | "female" | "both";
   subcollection_id?: string | null;
+  collection_ids?: string[];
   stock?: number;
   is_polarized?: boolean;
   discount_percentage?: number;
@@ -49,8 +54,8 @@ export interface ProductUpdate {
   price?: number;
   images?: string[];
   categories?: string[];
-  audience?: "male" | "female" | "both";
   subcollection_id?: string | null;
+  collection_ids?: string[];
   stock?: number;
   is_polarized?: boolean;
   discount_percentage?: number;

@@ -11,7 +11,11 @@ export default async function AdminHomePage() {
         Ovo je administratorska nadzorna ploča. S lijeve strane odaberi
         &quot;Artikli&quot; za upravljanje proizvodima ili &quot;Narudžbe&quot;
         za pregled i označavanje narudžbi. Opcija &quot;Grupni popust&quot;
-        omogućava brzo postavljanje popusta na više artikala odjednom.
+        omogućava brzo postavljanje popusta na više artikala odjednom, a
+        &quot;Istaknuti proizvodi&quot; služi za odabir proizvoda koji se prikazuju
+        na početnoj stranici. U sekciji &quot;Kolekcije&quot; možeš dodavati nove
+        kolekcije s thumbnail slikom. U sekciji &quot;Galerija i hero&quot; dodaješ
+        fotografije koje se prikazuju u galeriji i hero slideru.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -37,6 +41,30 @@ export default async function AdminHomePage() {
         >
           <h2 className="text-lg sm:text-xl font-semibold mb-2">Grupni popust</h2>
           <p className="text-gray-600">Postavi isti popust na više artikala</p>
+        </Link>
+
+        <Link
+          href="/admin/featured-products"
+          className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
+        >
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">Istaknuti proizvodi</h2>
+          <p className="text-gray-600">Odaberi do 15 proizvoda za početnu stranicu</p>
+        </Link>
+
+        <Link
+          href="/admin/collections"
+          className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
+        >
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">Kolekcije</h2>
+          <p className="text-gray-600">Kreiraj i uredi kolekcije s thumbnail slikama</p>
+        </Link>
+
+        <Link
+          href="/admin/gallery"
+          className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
+        >
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">Galerija i hero</h2>
+          <p className="text-gray-600">Dodaj ili obriši fotografije za galeriju i hero</p>
         </Link>
       </div>
     </div>

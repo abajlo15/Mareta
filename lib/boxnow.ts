@@ -111,6 +111,11 @@ type CreateDeliveryRequestInput = {
     contactEmail: string;
     contactName: string;
     locationId: string;
+    title?: string;
+    name?: string;
+    addressLine1?: string;
+    postalCode?: string;
+    country?: string;
   };
   destination: {
     contactNumber: string;

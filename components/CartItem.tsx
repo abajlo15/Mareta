@@ -20,6 +20,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
     item.product.discount_percentage
   );
   const discountPercentage = normalizeDiscountPercentage(item.product.discount_percentage);
+  const hasReachedStockLimit = item.quantity >= item.product.stock;
 
   return (
     <div className="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-soft border border-gray-100">
@@ -52,11 +53,15 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
         <span className="w-12 text-center">{item.quantity}</span>
         <button
           onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100"
+          disabled={hasReachedStockLimit}
+          className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           +
         </button>
       </div>
+      {hasReachedStockLimit && (
+        <p className="text-xs text-amber-700">Dosegnuta maksimalna dostupna količina.</p>
+      )}
       <div className="text-right">
         <p className="font-semibold text-lg">
           {(itemUnitPrice * item.quantity).toFixed(2)} €

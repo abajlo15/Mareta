@@ -5,6 +5,10 @@ import { calculateDiscountedPrice } from './pricing';
 const CART_STORAGE_KEY = 'mareta_cart';
 const CART_UPDATED_EVENT = 'cartUpdated';
 
+function normalizeStock(stock: number): number {
+  return Math.max(0, Number.isFinite(stock) ? stock : 0);
+}
+
 export function getCart(): Cart {
   if (typeof window === 'undefined') {
     return { items: [], total: 0, itemCount: 0 };
@@ -35,11 +39,18 @@ export function addToCart(product: Product, quantity: number = 1): Cart {
   const existingItemIndex = cart.items.findIndex(
     (item) => item.product.id === product.id
   );
+  const maxStock = normalizeStock(product.stock);
+  const requestedQuantity = Math.max(1, Math.floor(quantity));
+
+  if (maxStock === 0) {
+    return cart;
+  }
 
   if (existingItemIndex >= 0) {
-    cart.items[existingItemIndex].quantity += quantity;
+    const nextQuantity = cart.items[existingItemIndex].quantity + requestedQuantity;
+    cart.items[existingItemIndex].quantity = Math.min(nextQuantity, maxStock);
   } else {
-    cart.items.push({ product, quantity });
+    cart.items.push({ product, quantity: Math.min(requestedQuantity, maxStock) });
   }
 
   saveCart(cart.items);
@@ -61,7 +72,11 @@ export function updateCartItemQuantity(productId: string, quantity: number): Car
   const cart = getCart();
   const item = cart.items.find((item) => item.product.id === productId);
   if (item) {
-    item.quantity = quantity;
+    const maxStock = normalizeStock(item.product.stock);
+    if (maxStock === 0) {
+      return removeFromCart(productId);
+    }
+    item.quantity = Math.min(Math.max(1, Math.floor(quantity)), maxStock);
   }
   saveCart(cart.items);
   return getCart();

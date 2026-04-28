@@ -3,11 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 type Params = { params: Promise<{ id: string }> };
-const AUDIENCES = ["male", "female", "both"] as const;
-type Audience = (typeof AUDIENCES)[number];
-
-const isValidAudience = (value: unknown): value is Audience =>
-  typeof value === "string" && AUDIENCES.includes(value as Audience);
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
@@ -20,13 +15,13 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, price, discountPercentage, categories, audience, subcollectionId, stock, isPolarized, images } = body as {
+    const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images } = body as {
       name?: string;
       description?: string | null;
       price?: number;
       discountPercentage?: number;
       categories?: string[];
-      audience?: Audience;
+      collectionIds?: string[];
       subcollectionId?: string | null;
       stock?: number;
       isPolarized?: boolean;
@@ -39,8 +34,9 @@ export async function PATCH(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
-    if (!isValidAudience(audience)) {
-      return NextResponse.json({ error: "Odaberi valjanu kolekciju." }, { status: 400 });
+    const uniqueCollectionIds = Array.isArray(collectionIds) ? [...new Set(collectionIds)] : [];
+    if (!uniqueCollectionIds.length) {
+      return NextResponse.json({ error: "Odaberi barem jednu kolekciju." }, { status: 400 });
     }
     if (typeof subcollectionId !== "string" || !subcollectionId.trim()) {
       return NextResponse.json(
@@ -51,7 +47,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     const { data: selectedSubcollection, error: subcollectionError } = await supabase
       .from("subcollections")
-      .select("id, gender")
+      .select("id")
       .eq("id", subcollectionId)
       .single();
 
@@ -59,11 +55,16 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Odabrana podkolekcija ne postoji." }, { status: 400 });
     }
 
-    if (audience !== "both" && selectedSubcollection.gender !== audience) {
-      return NextResponse.json(
-        { error: "Odabrana podkolekcija ne pripada odabranoj kolekciji." },
-        { status: 400 }
-      );
+    const { data: selectedCollections, error: selectedCollectionsError } = await supabase
+      .from("collections")
+      .select("id")
+      .in("id", uniqueCollectionIds);
+
+    if (selectedCollectionsError) {
+      return NextResponse.json({ error: selectedCollectionsError.message }, { status: 500 });
+    }
+    if ((selectedCollections ?? []).length !== uniqueCollectionIds.length) {
+      return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
     }
 
     const stockValue = typeof stock === "number" ? Math.max(0, stock) : 0;
@@ -79,7 +80,6 @@ export async function PATCH(request: Request, { params }: Params) {
         description: description ?? null,
         price,
         categories: Array.isArray(categories) ? categories : [],
-        audience,
         subcollection_id: subcollectionId,
         stock: stockValue,
         is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
@@ -90,6 +90,24 @@ export async function PATCH(request: Request, { params }: Params) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const { error: deleteLinksError } = await supabase
+      .from("product_collections")
+      .delete()
+      .eq("product_id", id);
+    if (deleteLinksError) {
+      return NextResponse.json({ error: deleteLinksError.message }, { status: 500 });
+    }
+
+    const { error: insertLinksError } = await supabase.from("product_collections").insert(
+      uniqueCollectionIds.map((collectionId) => ({
+        product_id: id,
+        collection_id: collectionId,
+      }))
+    );
+    if (insertLinksError) {
+      return NextResponse.json({ error: insertLinksError.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
