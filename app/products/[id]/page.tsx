@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import ColorVariantSelect from '@/components/ColorVariantSelect';
 import { fetchProduct } from '@/lib/products';
 import { addToCart } from '@/lib/cart';
 import type { Product } from '@/types/product';
@@ -142,6 +143,10 @@ export default function ProductDetailPage() {
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-4 break-words">{product.name}</h1>
+          <ColorVariantSelect
+            currentProductId={product.id}
+            variants={product.color_variants}
+          />
           {visibleCategories.length > 0 && (
             <p className="text-gray-600 mb-4">Kolekcija: {visibleCategories.join(", ")}</p>
           )}

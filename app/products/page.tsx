@@ -21,7 +21,7 @@ function ProductsPageContent() {
     { id: string; name: string; thumbnail_url: string | null; collection_id: string }[]
   >([]);
   const [collections, setCollections] = useState<
-    { id: string; name: string; slug: string; thumbnail_url: string | null }[]
+    { id: string; name: string; slug: string; thumbnail_url: string | null; description: string | null }[]
   >([]);
   const [polarized, setPolarized] = useState<boolean | null>(null);
   const selectedCollectionParam = searchParams.get('kolekcija');
@@ -92,6 +92,32 @@ function ProductsPageContent() {
       filtered = filtered.filter((p) => p.is_polarized === polarized);
     }
 
+    const useSubcollectionOrder = Boolean(subcollectionId);
+    const useCollectionOrder =
+      Boolean(selectedCollection) && subcollections.length === 0;
+
+    if (useSubcollectionOrder || useCollectionOrder) {
+      filtered.sort((a, b) => {
+        const posA = useSubcollectionOrder
+          ? (a.subcollection_position ?? 999999)
+          : (a.collection_positions?.find(
+              (item) => item.collection_id === selectedCollection?.id
+            )?.position ?? 999999);
+        const posB = useSubcollectionOrder
+          ? (b.subcollection_position ?? 999999)
+          : (b.collection_positions?.find(
+              (item) => item.collection_id === selectedCollection?.id
+            )?.position ?? 999999);
+
+        if (posA !== posB) return posA - posB;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+    } else {
+      filtered.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+
     setFilteredProducts(filtered);
   };
 
@@ -156,6 +182,12 @@ function ProductsPageContent() {
               Promijeni kolekciju
             </button>
           </div>
+
+          {selectedCollection.description && (
+            <p className="text-base sm:text-lg text-dark-700 max-w-2xl mx-auto mb-8 px-4 sm:px-6 py-3 rounded-lg bg-primary-50/50 border-l-4 border-primary-400 text-left sm:text-center leading-relaxed font-medium">
+              {selectedCollection.description}
+            </p>
+          )}
 
           <p className="text-gray-600 mb-6">Odaberi podkolekciju.</p>
 

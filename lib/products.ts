@@ -12,6 +12,7 @@ export type Collection = {
   name: string;
   slug: string;
   thumbnail_url: string | null;
+  description: string | null;
 };
 
 export async function fetchProducts(filters?: {

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import {
+  getNextCollectionPosition,
+  getNextSubcollectionPosition,
+} from "@/lib/productPositions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 export async function GET() {
@@ -100,15 +104,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { error: collectionsLinkError } = await supabase.from("product_collections").insert(
-    uniqueCollectionIds.map((collectionId) => ({
+  const collectionLinks = await Promise.all(
+    uniqueCollectionIds.map(async (collectionId) => ({
       product_id: insertedProduct.id,
       collection_id: collectionId,
+      position: await getNextCollectionPosition(supabase, collectionId),
     }))
   );
 
+  const { error: collectionsLinkError } = await supabase
+    .from("product_collections")
+    .insert(collectionLinks);
+
   if (collectionsLinkError) {
     return NextResponse.json({ error: collectionsLinkError.message }, { status: 500 });
+  }
+
+  if (normalizedSubcollectionId) {
+    const position = await getNextSubcollectionPosition(supabase, normalizedSubcollectionId);
+    const { error: subcollectionPositionError } = await supabase
+      .from("subcollection_product_positions")
+      .upsert(
+        {
+          subcollection_id: normalizedSubcollectionId,
+          product_id: insertedProduct.id,
+          position,
+        },
+        { onConflict: "subcollection_id,product_id" }
+      );
+
+    if (subcollectionPositionError) {
+      return NextResponse.json({ error: subcollectionPositionError.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true }, { status: 201 });

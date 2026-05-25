@@ -7,11 +7,13 @@ type Collection = {
   name: string;
   slug: string;
   thumbnail_url: string | null;
+  description: string | null;
 };
 
 export default function CollectionsManager({ initialCollections }: { initialCollections: Collection[] }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -20,6 +22,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingSlug, setEditingSlug] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
   const [editingThumbnailUrl, setEditingThumbnailUrl] = useState("");
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -78,7 +81,12 @@ export default function CollectionsManager({ initialCollections }: { initialColl
     const response = await fetch("/api/admin/collections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, slug, thumbnailUrl: thumbnailUrl || null }),
+      body: JSON.stringify({
+        name,
+        slug,
+        description: description || null,
+        thumbnailUrl: thumbnailUrl || null,
+      }),
     });
     setLoading(false);
     if (!response.ok) {
@@ -88,6 +96,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
     }
     setName("");
     setSlug("");
+    setDescription("");
     setThumbnailUrl("");
     if (createFileInputRef.current) createFileInputRef.current.value = "";
     window.location.reload();
@@ -102,6 +111,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
       body: JSON.stringify({
         name: editingName,
         slug: editingSlug,
+        description: editingDescription || null,
         thumbnailUrl: editingThumbnailUrl || null,
       }),
     });
@@ -145,6 +155,12 @@ export default function CollectionsManager({ initialCollections }: { initialColl
       <form onSubmit={handleCreate} className="space-y-3 border border-slate-200 rounded p-3">
         <input className="w-full border border-slate-300 rounded px-3 py-2" placeholder="Naziv kolekcije" value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="w-full border border-slate-300 rounded px-3 py-2" placeholder="Slug (npr. premium-zenska)" value={slug} onChange={(e) => setSlug(e.target.value)} />
+        <textarea
+          className="w-full border border-slate-300 rounded px-3 py-2 min-h-[80px]"
+          placeholder="Opis kolekcije (opcionalno)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
         <div>
           <label className="block text-sm font-medium mb-1">Thumbnail</label>
           <input ref={createFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCreateImageChange} disabled={uploading} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer" />
@@ -165,6 +181,12 @@ export default function CollectionsManager({ initialCollections }: { initialColl
                 <div className="flex-1 space-y-1">
                   <input className="w-full border border-slate-300 rounded px-2 py-1" value={editingName} onChange={(e) => setEditingName(e.target.value)} />
                   <input className="w-full border border-slate-300 rounded px-2 py-1" value={editingSlug} onChange={(e) => setEditingSlug(e.target.value)} />
+                  <textarea
+                    className="w-full border border-slate-300 rounded px-2 py-1 min-h-[60px] text-sm"
+                    placeholder="Opis kolekcije (opcionalno)"
+                    value={editingDescription}
+                    onChange={(e) => setEditingDescription(e.target.value)}
+                  />
                   <input ref={editFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleEditImageChange} disabled={uploadingEdit} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer" />
                 </div>
                 <button type="button" onClick={() => handleUpdate(item.id)} disabled={actionLoadingId === item.id || uploadingEdit} className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">Spremi</button>
@@ -176,8 +198,11 @@ export default function CollectionsManager({ initialCollections }: { initialColl
                 <div className="flex-1">
                   <p className="font-medium">{item.name}</p>
                   <p className="text-xs text-slate-500">{item.slug}</p>
+                  {item.description && (
+                    <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">{item.description}</p>
+                  )}
                 </div>
-                <button type="button" onClick={() => { setEditingId(item.id); setEditingName(item.name); setEditingSlug(item.slug); setEditingThumbnailUrl(item.thumbnail_url ?? ""); }} className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600">Uredi</button>
+                <button type="button" onClick={() => { setEditingId(item.id); setEditingName(item.name); setEditingSlug(item.slug); setEditingDescription(item.description ?? ""); setEditingThumbnailUrl(item.thumbnail_url ?? ""); }} className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600">Uredi</button>
                 <button type="button" onClick={() => handleDelete(item.id)} disabled={actionLoadingId === item.id} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">Obriši</button>
               </>
             )}

@@ -81,6 +81,13 @@ export default function AdminSidebar() {
             Grupni popust
           </a>
           <a
+            href="/admin/product-color-groups"
+            className="block rounded px-3 py-2 hover:bg-slate-800"
+            onClick={() => setOpen(false)}
+          >
+            Varijante boja
+          </a>
+          <a
             href="/admin/collections"
             className="block rounded px-3 py-2 hover:bg-slate-800"
             onClick={() => setOpen(false)}

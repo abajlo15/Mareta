@@ -10,7 +10,7 @@ export async function GET() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("collections")
-      .select("id, name, slug, thumbnail_url")
+      .select("id, name, slug, thumbnail_url, description")
       .order("name", { ascending: true });
 
     if (error) {

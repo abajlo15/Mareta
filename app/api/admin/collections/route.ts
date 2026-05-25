@@ -17,7 +17,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("collections")
-    .select("id, name, slug, thumbnail_url")
+    .select("id, name, slug, thumbnail_url, description")
     .order("name", { ascending: true });
 
   if (error) {
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
       : null;
   const customSlug = typeof body?.slug === "string" ? body.slug.trim() : "";
   const slug = slugify(customSlug || name);
+  const description =
+    typeof body?.description === "string" && body.description.trim()
+      ? body.description.trim()
+      : null;
 
   if (!name) {
     return NextResponse.json({ error: "Naziv kolekcije je obavezan." }, { status: 400 });
@@ -52,8 +56,9 @@ export async function POST(request: Request) {
       name,
       slug,
       thumbnail_url: thumbnailUrl,
+      description,
     })
-    .select("id, name, slug, thumbnail_url")
+    .select("id, name, slug, thumbnail_url, description")
     .single();
 
   if (error) {

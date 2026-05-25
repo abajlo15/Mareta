@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { fetchColorVariantsForProduct } from '@/lib/productColorGroups';
+import { PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION } from '@/lib/productSelect';
 import { z } from 'zod';
 
 const productUpdateSchema = z.object({
@@ -23,7 +25,7 @@ export async function GET(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*, subcollection:subcollections(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))')
+      .select(`*, ${PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION}`)
       .eq('id', id)
       .single();
 
@@ -34,6 +36,8 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const colorVariants = await fetchColorVariantsForProduct(supabase, id);
+
     const normalized = {
       ...data,
       collections: (data.product_collections ?? [])
@@ -41,6 +45,7 @@ export async function GET(
           Array.isArray(item.collection) ? (item.collection[0] ?? null) : item.collection
         )
         .filter(Boolean),
+      ...(colorVariants ? { color_variants: colorVariants } : {}),
     };
 
     return NextResponse.json(normalized);

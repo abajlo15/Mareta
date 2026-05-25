@@ -44,6 +44,14 @@ export default async function AdminHomePage() {
         </Link>
 
         <Link
+          href="/admin/product-color-groups"
+          className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
+        >
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">Varijante boja</h2>
+          <p className="text-gray-600">Poveži proizvode različitih boja u grupu</p>
+        </Link>
+
+        <Link
           href="/admin/featured-products"
           className="bg-white p-6 rounded-xl shadow-soft hover:shadow-elegant transition-all duration-300 border border-gray-100"
         >

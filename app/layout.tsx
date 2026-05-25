@@ -6,8 +6,11 @@ import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const siteName = "Mareta Sunglasses";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.maretasunglasses.com"),
+  applicationName: siteName,
   title: "Mareta Webshop - Sunčane naočale",
   description: "Prodaja sunčanih naočala",
   icons: {
@@ -16,6 +19,7 @@ export const metadata: Metadata = {
     apple: "/logo.jpg",
   },
   openGraph: {
+    siteName,
     title: "Mareta Webshop - Sunčane naočale",
     description: "Prodaja sunčanih naočala",
     images: ["/logo.jpg"],

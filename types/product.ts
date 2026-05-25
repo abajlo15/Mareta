@@ -32,6 +32,15 @@ export interface Product {
     slug: string;
     thumbnail_url: string | null;
   }[];
+  collection_positions?: {
+    collection_id: string;
+    position: number;
+  }[];
+  subcollection_position?: number | null;
+  color_variants?: {
+    product_id: string;
+    label: string;
+  }[];
 }
 
 export interface ProductInsert {

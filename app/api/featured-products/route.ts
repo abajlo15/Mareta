@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION } from "@/lib/productSelect";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 export async function GET() {
@@ -6,7 +7,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("featured_products")
-    .select("position, product:products(*, subcollection:subcollections(id, name, thumbnail_url, collection_id))")
+    .select(`position, product:products(*, ${PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION})`)
     .order("position", { ascending: true });
 
   if (error) {

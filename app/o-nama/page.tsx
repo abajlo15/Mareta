@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "O nama - Mareta",
-  description: "Saznajte više o Mareta – elegantne sunčane naočale za modernu ženu.",
+  description:
+    "Mareta je nastala u Zadru – sunčane naočale za svaki dan, s fokusom na kvalitetu, UV zaštitu i jednostavnom eleganciji.",
 };
 
 export default function ONamaPage() {
@@ -16,15 +17,21 @@ export default function ONamaPage() {
             O nama
           </h1>
           <p className="text-lg sm:text-xl text-dark-700 text-center max-w-3xl mx-auto mb-12 font-light">
-            Elegantne sunčane naočale za modernu ženu.
+            Iz Zadra, za sunce i za svaki dan.
           </p>
 
           <div className="max-w-3xl mx-auto space-y-6 text-dark-700">
             <p className="text-base leading-relaxed">
-              Dobrodošli u Mareta. Posvećeni smo kvaliteti i stilu – svaki par naočala odabran je s pažnjom kako biste se osjećale posebno.
+              Mareta je krenula iz Zadra, grada u kojem sunčane naočale nisu modni dodatak koji izvlačiš iz ladice par puta godišnje. Ovdje su one stvar opće kulture, prva stvar koju uzimaš uz ključeve i mobitel kad izlaziš iz kuće, bez obzira na godišnje doba. Iz te cjelogodišnje tradicije i želje za jednostavnim, a kvalitetnim stvarima, nastala je naša priča.
             </p>
             <p className="text-base leading-relaxed">
-              Ovdje možete dodati više teksta o povijesti brenda, vrijednostima, timu ili bilo čemu drugome što želite podijeliti s posjetiteljima.
+              Nismo htjeli stvarati još jedan brend koji komplicira s visokom modom ili trendovima koji traju jedno ljeto. Pokrenuli smo Maretu s jasnim ciljem: ponuditi sunčane cvike koje i sami želimo nositi svaki dan. One koje dobro sjedaju na lice, idu uz svaku kombinaciju i u kojima se osjećaš opušteno, bilo da si u điru kroz Varoš, na kavi na Rivi ili na brodu usred kanala.
+            </p>
+            <p className="text-base leading-relaxed">
+              Svaki model u našoj ponudi biramo osobno i testiramo ga na našem, zadarskom suncu koje zna biti prilično nemilosrdno. Zato nam je estetika važna, ali kvaliteta stakala i dobra UV zaštita su nam na prvom mjestu. Želimo da tvoje oči budu odmorene i zaštićene, a da pritom ne moraš razmišljati jesi li naočale preplatio.
+            </p>
+            <p className="text-base leading-relaxed">
+              Radimo polako, iskreno i bez pritiska. Vjerujemo u dobre materijale, pristupačnu cijenu i fer odnos prema ljudima koji biraju naš brend. Hvala ti što nas pratiš u ovom našem điru.
             </p>
           </div>
 

@@ -27,7 +27,7 @@ export default function Footer() {
               </h3>
             </div>
             <p className="text-gray-300 mb-4">
-              Elegantne sunčane naočale za modernu ženu. Kvaliteta i stil u svakom komadu.
+              Ne žmiri - stavi cvike ka čovik!
             </p>
             <div className="flex space-x-4">
               <Link

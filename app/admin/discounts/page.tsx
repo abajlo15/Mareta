@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
+import { SUBCOLLECTION_EMBED_MINIMAL } from "@/lib/productSelect";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import BulkDiscountForm from "./bulkDiscountForm";
 
@@ -19,7 +20,7 @@ export default async function AdminDiscountsPage() {
 
   const { data: productsRows } = await supabase
     .from("products")
-    .select("id, name, categories, images, subcollection_id, subcollection:subcollections(id, name)")
+    .select(`id, name, categories, images, subcollection_id, ${SUBCOLLECTION_EMBED_MINIMAL}`)
     .order("name", { ascending: true });
 
   const categoriesSet = new Set<string>();

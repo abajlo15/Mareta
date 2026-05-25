@@ -26,6 +26,10 @@ export async function PATCH(request: Request, { params }: Params) {
       : null;
   const customSlug = typeof body?.slug === "string" ? body.slug.trim() : "";
   const slug = slugify(customSlug || name);
+  const description =
+    typeof body?.description === "string" && body.description.trim()
+      ? body.description.trim()
+      : null;
 
   if (!name) {
     return NextResponse.json({ error: "Naziv kolekcije je obavezan." }, { status: 400 });
@@ -35,9 +39,9 @@ export async function PATCH(request: Request, { params }: Params) {
   }
   const { data, error } = await supabase
     .from("collections")
-    .update({ name, slug, thumbnail_url: thumbnailUrl })
+    .update({ name, slug, thumbnail_url: thumbnailUrl, description })
     .eq("id", id)
-    .select("id, name, slug, thumbnail_url")
+    .select("id, name, slug, thumbnail_url, description")
     .single();
 
   if (error) {
