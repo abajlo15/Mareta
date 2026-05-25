@@ -29,16 +29,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const category = searchParams.get('category');
 
-    const { data, error } = await queryPublicProducts(supabase, (query) => {
-      let next = query;
-      if (search) {
-        next = next.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-      }
-      if (category) {
-        next = next.contains('categories', [category]);
-      }
-      return next;
-    });
+    const { data, error } = await queryPublicProducts(supabase, { search, category });
 
     if (error) {
       console.error('Supabase error:', error);

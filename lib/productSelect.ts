@@ -36,3 +36,22 @@ export const ADMIN_PRODUCT_RELATIONS_NO_POSITION = `${subcollectionEmbed(
 )}, ${productCollectionsEmbed(false)}`;
 
 export const SUBCOLLECTION_EMBED_MINIMAL = subcollectionEmbed("id, name");
+
+/** Literal select strings for Supabase type inference (no template interpolation in .select()). */
+export const DISCOUNTS_PRODUCTS_SELECT =
+  "id, name, categories, images, subcollection_id, subcollection:subcollections!products_subcollection_id_fkey(id, name)" as const;
+
+export const PRODUCT_DETAIL_SELECT =
+  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))" as const;
+
+export const FEATURED_PRODUCTS_SELECT =
+  "position, product:products(*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url)))" as const;
+
+export const ADMIN_PRODUCTS_SELECT_WITH_POSITIONS =
+  "id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, subcollection:subcollections!products_subcollection_id_fkey(name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url)), subcollection_product_positions!subcollection_product_positions_product_id_fkey(position)" as const;
+
+export const ADMIN_PRODUCTS_SELECT_BASE =
+  "id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, subcollection:subcollections!products_subcollection_id_fkey(name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url))" as const;
+
+export const ADMIN_PRODUCTS_SELECT_NO_POSITION =
+  "id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, subcollection:subcollections!products_subcollection_id_fkey(name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))" as const;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchColorVariantsForProduct } from '@/lib/productColorGroups';
-import { PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION } from '@/lib/productSelect';
+import { PRODUCT_DETAIL_SELECT } from '@/lib/productSelect';
 import { z } from 'zod';
 
 const productUpdateSchema = z.object({
@@ -25,7 +25,7 @@ export async function GET(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
-      .select(`*, ${PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION}`)
+      .select(PRODUCT_DETAIL_SELECT)
       .eq('id', id)
       .single();
 

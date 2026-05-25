@@ -1,27 +1,37 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  ADMIN_PRODUCT_RELATIONS_BASE,
-  ADMIN_PRODUCT_RELATIONS_NO_POSITION,
-  ADMIN_PRODUCT_RELATIONS_WITH_POSITIONS,
-  PRODUCT_RELATIONS_SELECT,
-  PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION,
-  PRODUCT_RELATIONS_WITH_SUBCOLLECTION_POSITIONS,
+  ADMIN_PRODUCTS_SELECT_BASE,
+  ADMIN_PRODUCTS_SELECT_NO_POSITION,
+  ADMIN_PRODUCTS_SELECT_WITH_POSITIONS,
 } from "@/lib/productSelect";
 
 const PUBLIC_SELECT_VARIANTS = [
-  `*, ${PRODUCT_RELATIONS_WITH_SUBCOLLECTION_POSITIONS}`,
-  `*, ${PRODUCT_RELATIONS_SELECT}`,
-  `*, ${PRODUCT_RELATIONS_SELECT_NO_COLLECTION_POSITION}`,
+  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url)), subcollection_product_positions!subcollection_product_positions_product_id_fkey(position)",
+  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url))",
+  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))",
 ] as const;
-
-const ADMIN_COLUMNS =
-  "id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images";
 
 const ADMIN_SELECT_VARIANTS = [
-  `${ADMIN_COLUMNS}, ${ADMIN_PRODUCT_RELATIONS_WITH_POSITIONS}`,
-  `${ADMIN_COLUMNS}, ${ADMIN_PRODUCT_RELATIONS_BASE}`,
-  `${ADMIN_COLUMNS}, ${ADMIN_PRODUCT_RELATIONS_NO_POSITION}`,
+  ADMIN_PRODUCTS_SELECT_WITH_POSITIONS,
+  ADMIN_PRODUCTS_SELECT_BASE,
+  ADMIN_PRODUCTS_SELECT_NO_POSITION,
 ] as const;
+
+export type AdminProductListItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  discount_percentage?: number;
+  categories?: string[] | null;
+  collections?: { id: string; name: string; slug: string }[];
+  collection_positions?: { collection_id: string; position: number }[];
+  subcollection_id?: string | null;
+  subcollection_position?: number | null;
+  subcollection?: { name: string; collection_id?: string } | null;
+  stock?: number;
+  images?: string[] | null;
+};
 
 function isSchemaMismatchError(error: { code?: string; message?: string } | null) {
   if (!error) return false;
@@ -84,22 +94,27 @@ export function normalizeProductRow(product: ProductRow) {
 
 export async function queryPublicProducts(
   supabase: SupabaseClient,
-  applyFilters?: (
-    query: ReturnType<SupabaseClient["from"]>
-  ) => ReturnType<SupabaseClient["from"]>
+  filters?: { search?: string | null; category?: string | null }
 ) {
   let lastError: { code?: string; message?: string } | null = null;
 
   for (const select of PUBLIC_SELECT_VARIANTS) {
-    let query = supabase.from("products").select(select);
-    if (applyFilters) {
-      query = applyFilters(query) as typeof query;
+    let query = supabase.from("products").select(select as string);
+    if (filters?.search) {
+      query = query.or(
+        `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+      );
+    }
+    if (filters?.category) {
+      query = query.contains("categories", [filters.category]);
     }
 
     const { data, error } = await query;
     if (!error) {
       return {
-        data: (data ?? []).map((product) => normalizeProductRow(product as ProductRow)),
+        data: (data ?? []).map((product) =>
+          normalizeProductRow(product as unknown as ProductRow)
+        ),
         error: null,
       };
     }
@@ -113,30 +128,56 @@ export async function queryPublicProducts(
   return { data: null, error: lastError };
 }
 
-export async function queryAdminProducts(supabase: SupabaseClient) {
+export async function queryAdminProducts(supabase: SupabaseClient): Promise<{
+  data: AdminProductListItem[] | null;
+  error: { code?: string; message?: string } | null;
+}> {
   let lastError: { code?: string; message?: string } | null = null;
 
   for (const select of ADMIN_SELECT_VARIANTS) {
     const { data, error } = await supabase
       .from("products")
-      .select(select)
+      .select(select as string)
       .order("created_at", { ascending: false });
 
     if (!error) {
       return {
-        data: (data ?? []).map((product) => {
-          const normalized = normalizeProductRow(product as ProductRow);
-          const subcollection = normalized.subcollection as
+        data: (data ?? []).map((product): AdminProductListItem => {
+          const row = product as unknown as ProductRow & {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number;
+            discount_percentage?: number;
+            categories?: string[] | null;
+            subcollection_id?: string | null;
+            stock?: number;
+            images?: string[] | null;
+            subcollection?: AdminProductListItem["subcollection"];
+          };
+          const normalized = normalizeProductRow(row);
+          const subcollectionRaw = row.subcollection as
             | { name: string; thumbnail_url: string | null; collection_id: string }
             | { name: string; thumbnail_url: string | null; collection_id: string }[]
             | null
             | undefined;
 
           return {
-            ...normalized,
-            subcollection: Array.isArray(subcollection)
-              ? (subcollection[0] ?? null)
-              : (subcollection ?? null),
+            id: row.id,
+            name: row.name,
+            description: row.description,
+            price: row.price,
+            discount_percentage: row.discount_percentage,
+            categories: row.categories,
+            subcollection_id: row.subcollection_id,
+            stock: row.stock,
+            images: row.images,
+            collections: normalized.collections as AdminProductListItem["collections"],
+            collection_positions: normalized.collection_positions,
+            subcollection_position: normalized.subcollection_position,
+            subcollection: Array.isArray(subcollectionRaw)
+              ? (subcollectionRaw[0] ?? null)
+              : (subcollectionRaw ?? null),
           };
         }),
         error: null,
