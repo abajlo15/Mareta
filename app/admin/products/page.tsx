@@ -48,6 +48,10 @@ export default async function AdminProductsPage() {
     .from("collections")
     .select("id, name, slug, thumbnail_url")
     .order("name", { ascending: true });
+  const { data: subcollections } = await supabase
+    .from("subcollections")
+    .select("id, name, thumbnail_url, collection_id")
+    .order("name", { ascending: true });
 
   const normalizedProducts = ((products ?? []) as ProductRow[]).map((product) => ({
     ...product,
@@ -66,7 +70,10 @@ export default async function AdminProductsPage() {
     <div className="space-y-8">
       <h2 className="text-xl sm:text-2xl font-semibold">Artikli</h2>
 
-      <AdminProductsForm collections={collections ?? []} />
+      <AdminProductsForm
+        collections={collections ?? []}
+        subcollections={subcollections ?? []}
+      />
 
       <AdminProductsList products={normalizedProducts} />
     </div>

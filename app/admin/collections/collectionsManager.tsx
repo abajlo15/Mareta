@@ -117,7 +117,13 @@ export default function CollectionsManager({ initialCollections }: { initialColl
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Jesi siguran da želiš obrisati kolekciju?")) return;
+    if (
+      !window.confirm(
+        "Jesi siguran da želiš obrisati kolekciju? Sve podkolekcije u ovoj kolekciji bit će također obrisane, a proizvodi će ostati bez podkolekcije."
+      )
+    ) {
+      return;
+    }
     setError(null);
     setActionLoadingId(id);
     const response = await fetch(`/api/admin/collections/${id}`, { method: "DELETE" });

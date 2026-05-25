@@ -140,7 +140,7 @@ function ProductsPageContent() {
     );
   }
 
-  if (!subcollectionId) {
+  if (!subcollectionId && subcollections.length > 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto text-center">
@@ -159,41 +159,28 @@ function ProductsPageContent() {
 
           <p className="text-gray-600 mb-6">Odaberi podkolekciju.</p>
 
-          {subcollections.length ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {subcollections.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSubcollectionId(item.id)}
-                  className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[260px]"
-                >
-                  <Image
-                    src={item.thumbnail_url || '/placeholder.svg'}
-                    alt={item.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
-                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                    <h2 className="text-xl font-semibold text-white mb-1">{item.name}</h2>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-gray-600">Trenutno nema podkolekcija za ovu kolekciju.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {subcollections.map((item) => (
               <button
+                key={item.id}
                 type="button"
-                onClick={() => router.push('/products')}
-                className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+                onClick={() => setSubcollectionId(item.id)}
+                className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[260px]"
               >
-                Vrati se na odabir kolekcije
+                <Image
+                  src={item.thumbnail_url || '/placeholder.svg'}
+                  alt={item.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                  <h2 className="text-xl font-semibold text-white mb-1">{item.name}</h2>
+                </div>
               </button>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -206,22 +193,26 @@ function ProductsPageContent() {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-elegant font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
             {selectedCollection.name}
           </h1>
-          <p className="text-gray-600 mt-1">
-            Podkolekcija: <span className="font-medium">{selectedSubcollection?.name ?? '-'}</span>
-          </p>
+          {subcollections.length > 0 && subcollectionId && (
+            <p className="text-gray-600 mt-1">
+              Podkolekcija: <span className="font-medium">{selectedSubcollection?.name ?? '-'}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSubcollectionId('');
-              setSearch('');
-              setPolarized(null);
-            }}
-            className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
-          >
-            Promijeni podkolekciju
-          </button>
+          {subcollections.length > 0 && subcollectionId && (
+            <button
+              type="button"
+              onClick={() => {
+                setSubcollectionId('');
+                setSearch('');
+                setPolarized(null);
+              }}
+              className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+            >
+              Promijeni podkolekciju
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

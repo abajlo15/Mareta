@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 const BUCKET = "product-images";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { error: "Datoteka ne smije biti veća od 5MB." },
+        { error: "Datoteka ne smije biti veća od 10MB." },
         { status: 400 }
       );
     }

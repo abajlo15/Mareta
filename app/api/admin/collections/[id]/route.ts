@@ -52,9 +52,49 @@ export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { id } = await params;
 
+  const { data: subcollections, error: subcollectionsError } = await supabase
+    .from("subcollections")
+    .select("id")
+    .eq("collection_id", id);
+
+  if (subcollectionsError) {
+    return NextResponse.json({ error: subcollectionsError.message }, { status: 500 });
+  }
+
+  const subcollectionIds = (subcollections ?? []).map((row) => row.id);
+
+  if (subcollectionIds.length > 0) {
+    const { error: detachError } = await supabase
+      .from("products")
+      .update({ subcollection_id: null })
+      .in("subcollection_id", subcollectionIds);
+
+    if (detachError) {
+      return NextResponse.json({ error: detachError.message }, { status: 500 });
+    }
+
+    const { error: deleteSubcollectionsError } = await supabase
+      .from("subcollections")
+      .delete()
+      .eq("collection_id", id);
+
+    if (deleteSubcollectionsError) {
+      return NextResponse.json({ error: deleteSubcollectionsError.message }, { status: 500 });
+    }
+  }
+
   const { error } = await supabase.from("collections").delete().eq("id", id);
 
   if (error) {
+    if (error.message.includes("subcollections_collection_id_fkey")) {
+      return NextResponse.json(
+        {
+          error:
+            "Kolekciju nije moguće obrisati jer još postoje povezane podkolekcije. Prvo ih obriši u Podkolekcije.",
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

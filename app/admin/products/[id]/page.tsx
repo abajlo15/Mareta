@@ -22,6 +22,10 @@ export default async function AdminProductEditPage({ params }: Params) {
     .from("collections")
     .select("id, name, slug, thumbnail_url")
     .order("name", { ascending: true });
+  const { data: subcollections } = await supabase
+    .from("subcollections")
+    .select("id, name, thumbnail_url, collection_id")
+    .order("name", { ascending: true });
 
   if (error || !product) {
     notFound();
@@ -44,6 +48,7 @@ export default async function AdminProductEditPage({ params }: Params) {
           collection_ids: (product.product_collections ?? []).map((item) => item.collection_id),
         }}
         collections={collections ?? []}
+        subcollections={subcollections ?? []}
       />
     </div>
   );

@@ -9,15 +9,24 @@ type Collection = {
   thumbnail_url: string | null;
 };
 
+type Subcollection = {
+  id: string;
+  name: string;
+  collection_id: string;
+};
+
 export default function AdminProductsForm({
   collections,
+  subcollections,
 }: {
   collections: Collection[];
+  subcollections: Subcollection[];
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<string>("");
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [subcollectionId, setSubcollectionId] = useState("");
   const [categoriesInput, setCategoriesInput] = useState("");
   const [stock, setStock] = useState<string>("0");
   const [discountPercentage, setDiscountPercentage] = useState<string>("0");
@@ -68,12 +77,30 @@ export default function AdminProductsForm({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  const collectionNameById = new Map(collections.map((c) => [c.id, c.name]));
+  const showCollectionPrefix = collectionIds.length > 1;
+
+  const availableSubcollections = subcollections.filter((item) =>
+    collectionIds.includes(item.collection_id)
+  );
+
   const toggleCollection = (collectionId: string) => {
-    setCollectionIds((current) =>
-      current.includes(collectionId)
+    setCollectionIds((current) => {
+      const next = current.includes(collectionId)
         ? current.filter((id) => id !== collectionId)
-        : [...current, collectionId]
-    );
+        : [...current, collectionId];
+
+      if (
+        subcollectionId &&
+        !subcollections.some(
+          (item) => item.id === subcollectionId && next.includes(item.collection_id)
+        )
+      ) {
+        setSubcollectionId("");
+      }
+
+      return next;
+    });
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,7 +125,7 @@ export default function AdminProductsForm({
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
-        subcollectionId: null,
+        subcollectionId: subcollectionId || null,
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
         images,
@@ -117,6 +144,7 @@ export default function AdminProductsForm({
     setDescription("");
     setPrice("");
     setCollectionIds([]);
+    setSubcollectionId("");
     setCategoriesInput("");
     setStock("0");
     setDiscountPercentage("0");
@@ -225,6 +253,33 @@ export default function AdminProductsForm({
             </label>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Podkolekcija</label>
+        <select
+          value={subcollectionId}
+          onChange={(e) => setSubcollectionId(e.target.value)}
+          disabled={!collectionIds.length}
+          className="w-full border border-slate-300 rounded px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+        >
+          <option value="">Bez podkolekcije</option>
+          {availableSubcollections.map((item) => {
+            const collectionName = collectionNameById.get(item.collection_id);
+            const label =
+              showCollectionPrefix && collectionName
+                ? `${collectionName} — ${item.name}`
+                : item.name;
+            return (
+              <option key={item.id} value={item.id}>
+                {label}
+              </option>
+            );
+          })}
+        </select>
+        {collectionIds.length > 0 && !availableSubcollections.length && (
+          <p className="text-sm text-slate-500 mt-1">Nema podkolekcija za odabrane kolekcije.</p>
+        )}
       </div>
 
       <div>
