@@ -1,6 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AdminImageThumb from "@/components/admin/AdminImageThumb";
+import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  settingsFromRowFields,
+  type ImageDisplaySettings,
+} from "@/types/imageDisplay";
 
 type Collection = {
   id: string;
@@ -8,6 +15,9 @@ type Collection = {
   slug: string;
   thumbnail_url: string | null;
   description: string | null;
+  thumbnail_focal_x?: number | null;
+  thumbnail_focal_y?: number | null;
+  thumbnail_zoom?: number | null;
 };
 
 export default function CollectionsManager({ initialCollections }: { initialCollections: Collection[] }) {
@@ -15,6 +25,10 @@ export default function CollectionsManager({ initialCollections }: { initialColl
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailSettings, setThumbnailSettings] = useState<ImageDisplaySettings>({
+    ...DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  });
+  const [repositionOpen, setRepositionOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +38,10 @@ export default function CollectionsManager({ initialCollections }: { initialColl
   const [editingSlug, setEditingSlug] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
   const [editingThumbnailUrl, setEditingThumbnailUrl] = useState("");
+  const [editingThumbnailSettings, setEditingThumbnailSettings] = useState<ImageDisplaySettings>({
+    ...DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  });
+  const [editingRepositionOpen, setEditingRepositionOpen] = useState(false);
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -50,6 +68,8 @@ export default function CollectionsManager({ initialCollections }: { initialColl
     try {
       const url = await uploadImage(file);
       setThumbnailUrl(url);
+      setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+      setRepositionOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
     } finally {
@@ -66,6 +86,8 @@ export default function CollectionsManager({ initialCollections }: { initialColl
     try {
       const url = await uploadImage(file);
       setEditingThumbnailUrl(url);
+      setEditingThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+      setEditingRepositionOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
     } finally {
@@ -86,6 +108,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
         slug,
         description: description || null,
         thumbnailUrl: thumbnailUrl || null,
+        thumbnailSettings,
       }),
     });
     setLoading(false);
@@ -98,6 +121,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
     setSlug("");
     setDescription("");
     setThumbnailUrl("");
+    setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
     if (createFileInputRef.current) createFileInputRef.current.value = "";
     window.location.reload();
   }
@@ -113,6 +137,7 @@ export default function CollectionsManager({ initialCollections }: { initialColl
         slug: editingSlug,
         description: editingDescription || null,
         thumbnailUrl: editingThumbnailUrl || null,
+        thumbnailSettings: editingThumbnailSettings,
       }),
     });
     setActionLoadingId(null);
@@ -165,8 +190,31 @@ export default function CollectionsManager({ initialCollections }: { initialColl
           <label className="block text-sm font-medium mb-1">Thumbnail</label>
           <input ref={createFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCreateImageChange} disabled={uploading} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer" />
           {uploading && <p className="text-sm text-slate-500 mt-1">Upload slike...</p>}
-          {thumbnailUrl && <img src={thumbnailUrl} alt="" className="mt-2 w-16 h-16 object-cover rounded border" />}
+          {thumbnailUrl && (
+            <div className="mt-2">
+              <AdminImageThumb
+                url={thumbnailUrl}
+                settings={thumbnailSettings}
+                onReposition={() => setRepositionOpen(true)}
+                onRemove={() => {
+                  setThumbnailUrl("");
+                  setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+                }}
+              />
+            </div>
+          )}
         </div>
+        <ImageRepositionModal
+          open={repositionOpen && !!thumbnailUrl}
+          imageUrl={thumbnailUrl}
+          preset="collectionTile"
+          initialSettings={thumbnailSettings}
+          onClose={() => setRepositionOpen(false)}
+          onSave={(settings) => {
+            setThumbnailSettings(settings);
+            setRepositionOpen(false);
+          }}
+        />
         <button type="submit" disabled={loading || uploading} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
           {loading ? "Spremanje..." : "Dodaj kolekciju"}
         </button>
@@ -177,7 +225,19 @@ export default function CollectionsManager({ initialCollections }: { initialColl
           <div key={item.id} className="flex items-center gap-2 border border-slate-200 rounded p-2">
             {editingId === item.id ? (
               <>
-                <img src={editingThumbnailUrl || "/placeholder.svg"} alt="" className="w-10 h-10 rounded object-cover border" />
+                {editingThumbnailUrl ? (
+                  <AdminImageThumb
+                    url={editingThumbnailUrl}
+                    settings={editingThumbnailSettings}
+                    onReposition={() => setEditingRepositionOpen(true)}
+                    onRemove={() => {
+                      setEditingThumbnailUrl("");
+                      setEditingThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+                    }}
+                  />
+                ) : (
+                  <img src="/placeholder.svg" alt="" className="h-10 w-10 rounded border object-cover" />
+                )}
                 <div className="flex-1 space-y-1">
                   <input className="w-full border border-slate-300 rounded px-2 py-1" value={editingName} onChange={(e) => setEditingName(e.target.value)} />
                   <input className="w-full border border-slate-300 rounded px-2 py-1" value={editingSlug} onChange={(e) => setEditingSlug(e.target.value)} />
@@ -202,13 +262,25 @@ export default function CollectionsManager({ initialCollections }: { initialColl
                     <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">{item.description}</p>
                   )}
                 </div>
-                <button type="button" onClick={() => { setEditingId(item.id); setEditingName(item.name); setEditingSlug(item.slug); setEditingDescription(item.description ?? ""); setEditingThumbnailUrl(item.thumbnail_url ?? ""); }} className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600">Uredi</button>
+                <button type="button" onClick={() => { setEditingId(item.id); setEditingName(item.name); setEditingSlug(item.slug); setEditingDescription(item.description ?? ""); setEditingThumbnailUrl(item.thumbnail_url ?? ""); setEditingThumbnailSettings(settingsFromRowFields({ focal_x: item.thumbnail_focal_x, focal_y: item.thumbnail_focal_y, zoom: item.thumbnail_zoom })); }} className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600">Uredi</button>
                 <button type="button" onClick={() => handleDelete(item.id)} disabled={actionLoadingId === item.id} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">Obriši</button>
               </>
             )}
           </div>
         ))}
       </div>
+
+      <ImageRepositionModal
+        open={editingRepositionOpen && !!editingThumbnailUrl}
+        imageUrl={editingThumbnailUrl}
+        preset="collectionTile"
+        initialSettings={editingThumbnailSettings}
+        onClose={() => setEditingRepositionOpen(false)}
+        onSave={(settings) => {
+          setEditingThumbnailSettings(settings);
+          setEditingRepositionOpen(false);
+        }}
+      />
     </div>
   );
 }

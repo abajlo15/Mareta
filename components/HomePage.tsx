@@ -2,15 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import Image from "next/image";
 import ProductCard from "@/components/ProductCard";
+import PositionedCoverImage from "@/components/PositionedCoverImage";
 import { fetchFeaturedProducts } from "@/lib/products";
-import { DEFAULT_GALLERY_IMAGES, fetchGalleryImages } from "@/lib/gallery";
+import {
+  DEFAULT_GALLERY_IMAGES,
+  fetchGalleryImages,
+  type GalleryImageItem,
+} from "@/lib/gallery";
+import { DEFAULT_IMAGE_DISPLAY_SETTINGS } from "@/types/imageDisplay";
 import type { Product } from "@/types/product";
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [heroImages, setHeroImages] = useState<string[]>(DEFAULT_GALLERY_IMAGES);
+  const [heroImages, setHeroImages] = useState<GalleryImageItem[]>(
+    DEFAULT_GALLERY_IMAGES.map((url) => ({
+      url,
+      settings: { ...DEFAULT_IMAGE_DISPLAY_SETTINGS },
+    }))
+  );
   const [loading, setLoading] = useState(true);
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
@@ -111,18 +121,22 @@ export default function HomePage() {
         <div className="absolute -z-10 -top-28 -left-24 h-72 w-72 rounded-full bg-primary-500/30 blur-3xl" />
         <div className="absolute -z-10 -bottom-24 -right-24 h-80 w-80 rounded-full bg-accent-500/25 blur-3xl" />
         <div className="absolute inset-0">
-          {heroImages.map((imageSrc, index) => (
-            <Image
-              key={imageSrc}
-              src={imageSrc}
-              alt={`Mareta kolekcija ${index + 1}`}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              className={`object-cover transition-all duration-1000 ${
+          {heroImages.map((item, index) => (
+            <div
+              key={`${item.url}-${index}`}
+              className={`absolute inset-0 transition-all duration-1000 ${
                 index === currentHeroImage ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-100'
               }`}
-            />
+            >
+              <PositionedCoverImage
+                src={item.url}
+                alt={`Mareta kolekcija ${index + 1}`}
+                settings={item.settings}
+                preset="hero"
+                priority={index === 0}
+                sizes="100vw"
+              />
+            </div>
           ))}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/35 to-black/65 transition-colors duration-500 group-hover:from-black/55 group-hover:to-black/60" />
           <div className="absolute inset-0 [background:radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0)_34%),radial-gradient(circle_at_80%_85%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_32%)]" />

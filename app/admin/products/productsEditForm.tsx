@@ -2,6 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import AdminImageThumb from "@/components/admin/AdminImageThumb";
+import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  getImageSettings,
+  parseImageSettingsMap,
+  type ImageDisplaySettings,
+  type ImageSettingsMap,
+} from "@/types/imageDisplay";
 
 type Product = {
   id: string;
@@ -15,6 +24,7 @@ type Product = {
   is_polarized?: boolean;
   discount_percentage?: number;
   images?: string[] | null;
+  image_settings?: ImageSettingsMap | null;
 };
 
 type Collection = {
@@ -52,6 +62,10 @@ export default function AdminProductEditForm({
   );
   const [isPolarized, setIsPolarized] = useState<boolean>(product.is_polarized ?? false);
   const [images, setImages] = useState<string[]>(product.images ?? []);
+  const [imageSettings, setImageSettings] = useState<ImageSettingsMap>(
+    parseImageSettingsMap(product.image_settings)
+  );
+  const [repositionUrl, setRepositionUrl] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +83,7 @@ export default function AdminProductEditForm({
     setDiscountPercentage(String(product.discount_percentage ?? 0));
     setIsPolarized(product.is_polarized ?? false);
     setImages(product.images ?? []);
+    setImageSettings(parseImageSettingsMap(product.image_settings));
   }, [product]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -98,6 +113,9 @@ export default function AdminProductEditForm({
         urls.push(url);
       }
       setImages((prev) => [...prev, ...urls]);
+      if (urls.length > 0) {
+        setRepositionUrl(urls[urls.length - 1]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu fotografija.");
     } finally {
@@ -107,7 +125,21 @@ export default function AdminProductEditForm({
   }
 
   function removeImage(index: number) {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed) {
+        setImageSettings((settings) => {
+          const next = { ...settings };
+          delete next[removed];
+          return next;
+        });
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
+  function saveImageSettings(url: string, settings: ImageDisplaySettings) {
+    setImageSettings((prev) => ({ ...prev, [url]: settings }));
   }
 
   const collectionNameById = new Map(collections.map((c) => [c.id, c.name]));
@@ -162,6 +194,7 @@ export default function AdminProductEditForm({
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
         images,
+        imageSettings,
       }),
     });
 
@@ -330,24 +363,32 @@ export default function AdminProductEditForm({
         {images.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {images.map((url, i) => (
-              <div key={url} className="relative">
-                <img
-                  src={url}
-                  alt=""
-                  className="w-16 h-16 object-cover rounded border"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs"
-                >
-                  ×
-                </button>
-              </div>
+              <AdminImageThumb
+                key={url}
+                url={url}
+                settings={getImageSettings(imageSettings, url)}
+                onReposition={() => setRepositionUrl(url)}
+                onRemove={() => removeImage(i)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <ImageRepositionModal
+        open={!!repositionUrl}
+        imageUrl={repositionUrl ?? ""}
+        preset="productCard"
+        initialSettings={
+          repositionUrl
+            ? getImageSettings(imageSettings, repositionUrl)
+            : DEFAULT_IMAGE_DISPLAY_SETTINGS
+        }
+        onClose={() => setRepositionUrl(null)}
+        onSave={(settings) => {
+          if (repositionUrl) saveImageSettings(repositionUrl, settings);
+        }}
+      />
 
       <button
         disabled={loading}

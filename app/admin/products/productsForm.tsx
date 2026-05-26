@@ -1,6 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AdminImageThumb from "@/components/admin/AdminImageThumb";
+import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  getImageSettings,
+  type ImageDisplaySettings,
+  type ImageSettingsMap,
+} from "@/types/imageDisplay";
 
 type Collection = {
   id: string;
@@ -32,6 +40,8 @@ export default function AdminProductsForm({
   const [discountPercentage, setDiscountPercentage] = useState<string>("0");
   const [isPolarized, setIsPolarized] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
+  const [imageSettings, setImageSettings] = useState<ImageSettingsMap>({});
+  const [repositionUrl, setRepositionUrl] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -65,6 +75,9 @@ export default function AdminProductsForm({
         urls.push(url);
       }
       setImages((prev) => [...prev, ...urls]);
+      if (urls.length > 0) {
+        setRepositionUrl(urls[urls.length - 1]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu fotografija.");
     } finally {
@@ -74,7 +87,21 @@ export default function AdminProductsForm({
   }
 
   function removeImage(index: number) {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed) {
+        setImageSettings((settings) => {
+          const next = { ...settings };
+          delete next[removed];
+          return next;
+        });
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
+  function saveImageSettings(url: string, settings: ImageDisplaySettings) {
+    setImageSettings((prev) => ({ ...prev, [url]: settings }));
   }
 
   const collectionNameById = new Map(collections.map((c) => [c.id, c.name]));
@@ -129,6 +156,7 @@ export default function AdminProductsForm({
         stock: Math.max(0, parseInt(stock, 10) || 0),
         isPolarized,
         images,
+        imageSettings,
       }),
     });
 
@@ -150,6 +178,7 @@ export default function AdminProductsForm({
     setDiscountPercentage("0");
     setIsPolarized(false);
     setImages([]);
+    setImageSettings({});
 
     window.location.reload();
   }
@@ -307,24 +336,32 @@ export default function AdminProductsForm({
         {images.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {images.map((url, i) => (
-              <div key={url} className="relative">
-                <img
-                  src={url}
-                  alt=""
-                  className="w-16 h-16 object-cover rounded border"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs"
-                >
-                  ×
-                </button>
-              </div>
+              <AdminImageThumb
+                key={url}
+                url={url}
+                settings={getImageSettings(imageSettings, url)}
+                onReposition={() => setRepositionUrl(url)}
+                onRemove={() => removeImage(i)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <ImageRepositionModal
+        open={!!repositionUrl}
+        imageUrl={repositionUrl ?? ""}
+        preset="productCard"
+        initialSettings={
+          repositionUrl
+            ? getImageSettings(imageSettings, repositionUrl)
+            : DEFAULT_IMAGE_DISPLAY_SETTINGS
+        }
+        onClose={() => setRepositionUrl(null)}
+        onSave={(settings) => {
+          if (repositionUrl) saveImageSettings(repositionUrl, settings);
+        }}
+      />
 
       <button
         disabled={loading}

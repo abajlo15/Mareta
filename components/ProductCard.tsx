@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Product } from '@/types/product';
+import { getImageSettings } from '@/types/imageDisplay';
+import PositionedCoverImage from '@/components/PositionedCoverImage';
 import FavoriteToggle from './FavoriteToggle';
 import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
 
@@ -14,6 +15,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const imageUrl = product.images && product.images.length > 0 
     ? product.images[0] 
     : '/placeholder.svg';
+  const imageSettings = getImageSettings(product.image_settings, imageUrl);
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
   const discountPercentage = normalizeDiscountPercentage(product.discount_percentage);
@@ -28,11 +30,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               AKCIJA -{discountPercentage}%
             </span>
           )}
-          <Image
+          <PositionedCoverImage
             src={imageUrl}
             alt={product.name}
-            fill
-            className="object-cover transition-transform duration-300 hover:scale-110"
+            settings={imageSettings}
+            preset="productCard"
+            hoverScale
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-dark-900/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>

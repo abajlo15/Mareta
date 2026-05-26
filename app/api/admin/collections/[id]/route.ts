@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { normalizeImageDisplaySettings, settingsToRowFields } from "@/types/imageDisplay";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,11 +38,22 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!slug) {
     return NextResponse.json({ error: "Slug kolekcije nije valjan." }, { status: 400 });
   }
+  const thumbnailSettings = normalizeImageDisplaySettings(body?.thumbnailSettings);
+  const thumbnailFields = settingsToRowFields(thumbnailSettings);
+
   const { data, error } = await supabase
     .from("collections")
-    .update({ name, slug, thumbnail_url: thumbnailUrl, description })
+    .update({
+      name,
+      slug,
+      thumbnail_url: thumbnailUrl,
+      description,
+      thumbnail_focal_x: thumbnailFields.focal_x,
+      thumbnail_focal_y: thumbnailFields.focal_y,
+      thumbnail_zoom: thumbnailFields.zoom,
+    })
     .eq("id", id)
-    .select("id, name, slug, thumbnail_url, description")
+    .select("id, name, slug, thumbnail_url, description, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .single();
 
   if (error) {

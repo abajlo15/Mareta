@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { parseImageSettingsMap, pruneImageSettingsMap } from "@/types/imageDisplay";
 import {
   getNextCollectionPosition,
   getNextSubcollectionPosition,
@@ -12,7 +13,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images")
+    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, image_settings")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
 
   const body = await request.json();
-  const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images } = body as {
+  const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images, imageSettings } = body as {
     name?: string;
     description?: string;
     price?: number;
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
     stock?: number;
     isPolarized?: boolean;
     images?: string[];
+    imageSettings?: unknown;
   };
 
   if (!name || typeof price !== "number") {
@@ -88,6 +90,12 @@ export async function POST(request: Request) {
       ? Math.min(100, Math.max(0, Math.round(discountPercentage)))
       : 0;
 
+  const imageList = Array.isArray(images) ? images : [];
+  const prunedImageSettings = pruneImageSettingsMap(
+    parseImageSettingsMap(imageSettings),
+    imageList
+  );
+
   const { data: insertedProduct, error } = await supabase.from("products").insert({
     name,
     description,
@@ -97,7 +105,8 @@ export async function POST(request: Request) {
     stock: stockValue,
     is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
     discount_percentage: discountValue,
-    images: Array.isArray(images) ? images : [],
+    images: imageList,
+    image_settings: prunedImageSettings,
   }).select("id").single();
 
   if (error || !insertedProduct) {

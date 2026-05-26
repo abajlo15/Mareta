@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { normalizeImageDisplaySettings, settingsToRowFields } from "@/types/imageDisplay";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -33,11 +34,21 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
   }
 
+  const thumbnailSettings = normalizeImageDisplaySettings(body?.thumbnailSettings);
+  const thumbnailFields = settingsToRowFields(thumbnailSettings);
+
   const { data, error } = await supabase
     .from("subcollections")
-    .update({ name, collection_id: collectionId, thumbnail_url: thumbnailUrl })
+    .update({
+      name,
+      collection_id: collectionId,
+      thumbnail_url: thumbnailUrl,
+      thumbnail_focal_x: thumbnailFields.focal_x,
+      thumbnail_focal_y: thumbnailFields.focal_y,
+      thumbnail_zoom: thumbnailFields.zoom,
+    })
     .eq("id", id)
-    .select("id, name, thumbnail_url, collection_id")
+    .select("id, name, thumbnail_url, collection_id, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .single();
 
   if (error) {

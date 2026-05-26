@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { normalizeImageDisplaySettings, settingsToRowFields } from "@/types/imageDisplay";
 
 const slugify = (value: string) =>
   value
@@ -17,7 +18,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("collections")
-    .select("id, name, slug, thumbnail_url, description")
+    .select("id, name, slug, thumbnail_url, description, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .order("name", { ascending: true });
 
   if (error) {
@@ -50,6 +51,9 @@ export async function POST(request: Request) {
   if (!slug) {
     return NextResponse.json({ error: "Slug kolekcije nije valjan." }, { status: 400 });
   }
+  const thumbnailSettings = normalizeImageDisplaySettings(body?.thumbnailSettings);
+  const thumbnailFields = settingsToRowFields(thumbnailSettings);
+
   const { data, error } = await supabase
     .from("collections")
     .insert({
@@ -57,8 +61,11 @@ export async function POST(request: Request) {
       slug,
       thumbnail_url: thumbnailUrl,
       description,
+      thumbnail_focal_x: thumbnailFields.focal_x,
+      thumbnail_focal_y: thumbnailFields.focal_y,
+      thumbnail_zoom: thumbnailFields.zoom,
     })
-    .select("id, name, slug, thumbnail_url, description")
+    .select("id, name, slug, thumbnail_url, description, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .single();
 
   if (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { normalizeImageDisplaySettings, settingsToRowFields } from "@/types/imageDisplay";
 
 export async function GET(request: NextRequest) {
   await requireAdmin();
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("subcollections")
-    .select("id, name, thumbnail_url, collection_id")
+    .select("id, name, thumbnail_url, collection_id, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .order("name", { ascending: true });
 
   const { data, error } = await query;
@@ -48,10 +49,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Odabrana kolekcija ne postoji." }, { status: 400 });
   }
 
+  const thumbnailSettings = normalizeImageDisplaySettings(body?.thumbnailSettings);
+  const thumbnailFields = settingsToRowFields(thumbnailSettings);
+
   const { data, error } = await supabase
     .from("subcollections")
-    .insert({ name, collection_id: collectionId, thumbnail_url: thumbnailUrl })
-    .select("id, name, thumbnail_url, collection_id")
+    .insert({
+      name,
+      collection_id: collectionId,
+      thumbnail_url: thumbnailUrl,
+      thumbnail_focal_x: thumbnailFields.focal_x,
+      thumbnail_focal_y: thumbnailFields.focal_y,
+      thumbnail_zoom: thumbnailFields.zoom,
+    })
+    .select("id, name, thumbnail_url, collection_id, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom")
     .single();
 
   if (error) {

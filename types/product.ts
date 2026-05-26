@@ -1,9 +1,12 @@
+import type { ImageSettingsMap } from "@/types/imageDisplay";
+
 export interface Product {
   id: string;
   name: string;
   description: string | null;
   price: number;
   images: string[];
+  image_settings?: ImageSettingsMap;
   categories: string[];
   subcollection_id: string | null;
   stock: number;
@@ -48,6 +51,7 @@ export interface ProductInsert {
   description?: string | null;
   price: number;
   images?: string[];
+  image_settings?: ImageSettingsMap;
   categories?: string[];
   subcollection_id?: string | null;
   collection_ids?: string[];
@@ -62,6 +66,7 @@ export interface ProductUpdate {
   description?: string | null;
   price?: number;
   images?: string[];
+  image_settings?: ImageSettingsMap;
   categories?: string[];
   subcollection_id?: string | null;
   collection_ids?: string[];

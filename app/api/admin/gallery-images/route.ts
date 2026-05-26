@@ -8,7 +8,7 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("gallery_images")
-    .select("id, image_url, position, created_at")
+    .select("id, image_url, position, focal_x, focal_y, zoom, created_at")
     .order("position", { ascending: true });
 
   if (error) {
@@ -19,6 +19,9 @@ export async function GET() {
     data = (fallback.data ?? []).map((image) => ({
       ...image,
       position: 0,
+      focal_x: 50,
+      focal_y: 50,
+      zoom: 1,
     }));
     error = fallback.error;
   }
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
     insertResult = await supabase
       .from("gallery_images")
       .insert({ image_url: imageUrl, position: nextPosition })
-      .select("id, image_url, position, created_at")
+      .select("id, image_url, position, focal_x, focal_y, zoom, created_at")
       .single();
   } else {
     insertResult = await supabase

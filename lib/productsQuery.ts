@@ -62,8 +62,14 @@ export function normalizeProductRow(product: ProductRow) {
     collection: unknown[] | unknown | null;
   }[];
 
+  const imageSettings =
+    product.image_settings && typeof product.image_settings === "object"
+      ? product.image_settings
+      : {};
+
   return {
     ...product,
+    image_settings: imageSettings,
     collections: productCollections
       .map((item) => {
         const collection = Array.isArray(item.collection)

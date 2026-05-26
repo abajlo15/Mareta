@@ -8,7 +8,7 @@ export default async function AdminGalleryPage() {
 
   let { data: images, error } = await supabase
     .from("gallery_images")
-    .select("id, image_url, position")
+    .select("id, image_url, position, focal_x, focal_y, zoom")
     .order("position", { ascending: true });
 
   if (error) {
@@ -19,6 +19,9 @@ export default async function AdminGalleryPage() {
     images = (fallback.data ?? []).map((image) => ({
       ...image,
       position: 0,
+      focal_x: 50,
+      focal_y: 50,
+      zoom: 1,
     }));
   }
 

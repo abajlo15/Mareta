@@ -1,11 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
+import PositionedCoverImage from "@/components/PositionedCoverImage";
+import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  settingsFromRowFields,
+  type ImageDisplaySettings,
+} from "@/types/imageDisplay";
 
 type GalleryImage = {
   id: string;
   image_url: string;
   position?: number;
+  focal_x?: number | null;
+  focal_y?: number | null;
+  zoom?: number | null;
 };
 
 export default function GalleryManager({ initialImages }: { initialImages: GalleryImage[] }) {
@@ -15,7 +25,22 @@ export default function GalleryManager({ initialImages }: { initialImages: Galle
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [repositionTarget, setRepositionTarget] = useState<GalleryImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function saveGallerySettings(id: string, settings: ImageDisplaySettings) {
+    const response = await fetch(`/api/admin/gallery-images/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings }),
+    });
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(data?.error || "Greška pri spremanju pozicije slike.");
+    }
+    const updated = (await response.json()) as GalleryImage;
+    setImages((current) => current.map((image) => (image.id === id ? updated : image)));
+  }
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -25,6 +50,7 @@ export default function GalleryManager({ initialImages }: { initialImages: Galle
     setError(null);
 
     try {
+      let lastSaved: GalleryImage | null = null;
       for (let i = 0; i < files.length; i += 1) {
         const formData = new FormData();
         formData.append("file", files[i]);
@@ -57,7 +83,11 @@ export default function GalleryManager({ initialImages }: { initialImages: Galle
         }
 
         const savedImage = (await saveResponse.json()) as GalleryImage;
+        lastSaved = savedImage;
         setImages((current) => [...current, savedImage]);
+      }
+      if (lastSaved) {
+        setRepositionTarget(lastSaved);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri dodavanju slike.");
@@ -163,20 +193,58 @@ export default function GalleryManager({ initialImages }: { initialImages: Galle
           >
             <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
               <span>Povuci za redoslijed</span>
-              <span aria-hidden="true" className="font-semibold tracking-wider">:::</span>
+              <span aria-hidden="true" className="font-semibold tracking-wider">
+                :::
+              </span>
             </div>
-            <img src={image.image_url} alt="" className="w-full h-40 object-cover rounded-md" />
+            <div className="relative mb-2 h-40 w-full overflow-hidden rounded-md">
+              <PositionedCoverImage
+                src={image.image_url}
+                alt=""
+                settings={settingsFromRowFields(image)}
+                preset="gallery"
+                unoptimized
+                sizes="200px"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setRepositionTarget(image)}
+              className="mb-2 w-full rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Repozicioniraj
+            </button>
             <button
               type="button"
               onClick={() => handleDelete(image.id)}
               disabled={deletingId === image.id}
-              className="mt-2 w-full rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-60"
+              className="w-full rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-60"
             >
               {deletingId === image.id ? "Brisanje..." : "Obriši"}
             </button>
           </div>
         ))}
       </div>
+
+      <ImageRepositionModal
+        open={!!repositionTarget}
+        imageUrl={repositionTarget?.image_url ?? ""}
+        preset="gallery"
+        initialSettings={
+          repositionTarget
+            ? settingsFromRowFields(repositionTarget)
+            : DEFAULT_IMAGE_DISPLAY_SETTINGS
+        }
+        onClose={() => setRepositionTarget(null)}
+        onSave={async (settings) => {
+          if (!repositionTarget) return;
+          try {
+            await saveGallerySettings(repositionTarget.id, settings);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Greška pri spremanju pozicije.");
+          }
+        }}
+      />
     </div>
   );
 }

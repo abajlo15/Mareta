@@ -1,10 +1,17 @@
 import type { Product } from '@/types/product';
+import {
+  settingsFromRowFields,
+  type ImageDisplaySettings,
+} from '@/types/imageDisplay';
 
 export type Subcollection = {
   id: string;
   name: string;
   thumbnail_url: string | null;
   collection_id: string;
+  thumbnail_focal_x?: number | null;
+  thumbnail_focal_y?: number | null;
+  thumbnail_zoom?: number | null;
 };
 
 export type Collection = {
@@ -13,7 +20,20 @@ export type Collection = {
   slug: string;
   thumbnail_url: string | null;
   description: string | null;
+  thumbnail_focal_x?: number | null;
+  thumbnail_focal_y?: number | null;
+  thumbnail_zoom?: number | null;
 };
+
+export function getThumbnailDisplaySettings(
+  item: Pick<Collection, 'thumbnail_focal_x' | 'thumbnail_focal_y' | 'thumbnail_zoom'>
+): ImageDisplaySettings {
+  return settingsFromRowFields({
+    focal_x: item.thumbnail_focal_x,
+    focal_y: item.thumbnail_focal_y,
+    zoom: item.thumbnail_zoom,
+  });
+}
 
 export async function fetchProducts(filters?: {
   search?: string;

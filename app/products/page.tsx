@@ -2,11 +2,18 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import ProductGrid from '@/components/ProductGrid';
+import PositionedCoverImage from '@/components/PositionedCoverImage';
+import { getThumbnailDisplaySettings } from '@/lib/products';
 import SearchBar from '@/components/SearchBar';
 import Filters from '@/components/Filters';
-import { fetchCollections, fetchProducts, fetchSubcollections } from '@/lib/products';
+import {
+  fetchCollections,
+  fetchProducts,
+  fetchSubcollections,
+  type Collection,
+  type Subcollection,
+} from '@/lib/products';
 import type { Product } from '@/types/product';
 
 function ProductsPageContent() {
@@ -17,12 +24,8 @@ function ProductsPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [subcollectionId, setSubcollectionId] = useState('');
-  const [subcollections, setSubcollections] = useState<
-    { id: string; name: string; thumbnail_url: string | null; collection_id: string }[]
-  >([]);
-  const [collections, setCollections] = useState<
-    { id: string; name: string; slug: string; thumbnail_url: string | null; description: string | null }[]
-  >([]);
+  const [subcollections, setSubcollections] = useState<Subcollection[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [polarized, setPolarized] = useState<boolean | null>(null);
   const selectedCollectionParam = searchParams.get('kolekcija');
   const selectedCollection =
@@ -147,12 +150,13 @@ function ProductsPageContent() {
                 onClick={() => router.push(`/products?kolekcija=${collection.slug}`)}
                 className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[250px] w-[calc(50%-0.375rem)] md:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.75rem)] max-w-[260px] min-w-[170px]"
               >
-                <Image
+                <PositionedCoverImage
                   src={collection.thumbnail_url || '/placeholder.svg'}
                   alt={collection.name}
-                  fill
+                  settings={getThumbnailDisplaySettings(collection)}
+                  preset="collectionTile"
+                  hoverScale
                   sizes="(max-width: 640px) 100vw, 50vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
@@ -199,12 +203,13 @@ function ProductsPageContent() {
                 onClick={() => setSubcollectionId(item.id)}
                 className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[260px]"
               >
-                <Image
+                <PositionedCoverImage
                   src={item.thumbnail_url || '/placeholder.svg'}
                   alt={item.name}
-                  fill
+                  settings={getThumbnailDisplaySettings(item)}
+                  preset="collectionTile"
+                  hoverScale
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/20" />
                 <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">

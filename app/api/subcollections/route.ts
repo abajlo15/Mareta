@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const collectionIdParam = request.nextUrl.searchParams.get("collectionId");
     let query = supabase
       .from('subcollections')
-      .select('id, name, thumbnail_url, collection_id')
+      .select('id, name, thumbnail_url, collection_id, thumbnail_focal_x, thumbnail_focal_y, thumbnail_zoom')
       .order('name', { ascending: true });
 
     if (collectionIdParam) {

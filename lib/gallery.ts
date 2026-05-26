@@ -1,3 +1,9 @@
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  settingsFromRowFields,
+  type ImageDisplaySettings,
+} from "@/types/imageDisplay";
+
 export const DEFAULT_GALLERY_IMAGES = Array.from(
   { length: 10 },
   (_, index) => `/slika${index + 1}.jpeg`
@@ -6,9 +12,17 @@ export const DEFAULT_GALLERY_IMAGES = Array.from(
 export type GalleryImageRow = {
   id: string;
   image_url: string;
+  focal_x?: number | null;
+  focal_y?: number | null;
+  zoom?: number | null;
 };
 
-export async function fetchGalleryImages(): Promise<string[]> {
+export type GalleryImageItem = {
+  url: string;
+  settings: ImageDisplaySettings;
+};
+
+export async function fetchGalleryImages(): Promise<GalleryImageItem[]> {
   try {
     const baseUrl =
       typeof window !== "undefined"
@@ -20,18 +34,45 @@ export async function fetchGalleryImages(): Promise<string[]> {
     });
 
     if (!response.ok) {
-      return DEFAULT_GALLERY_IMAGES;
+      return DEFAULT_GALLERY_IMAGES.map((url) => ({
+        url,
+        settings: { ...DEFAULT_IMAGE_DISPLAY_SETTINGS },
+      }));
     }
 
     const data = (await response.json()) as GalleryImageRow[] | null;
     const images = Array.isArray(data)
       ? data
-          .map((item) => item.image_url)
-          .filter((item): item is string => typeof item === "string" && !!item.trim())
+          .map((item) => {
+            if (typeof item.image_url !== "string" || !item.image_url.trim()) {
+              return null;
+            }
+            return {
+              url: item.image_url,
+              settings: settingsFromRowFields(item),
+            };
+          })
+          .filter((item): item is GalleryImageItem => item !== null)
       : [];
 
-    return images.length ? images : DEFAULT_GALLERY_IMAGES;
+    if (images.length) {
+      return images;
+    }
+
+    return DEFAULT_GALLERY_IMAGES.map((url) => ({
+      url,
+      settings: { ...DEFAULT_IMAGE_DISPLAY_SETTINGS },
+    }));
   } catch {
-    return DEFAULT_GALLERY_IMAGES;
+    return DEFAULT_GALLERY_IMAGES.map((url) => ({
+      url,
+      settings: { ...DEFAULT_IMAGE_DISPLAY_SETTINGS },
+    }));
   }
+}
+
+/** @deprecated Use fetchGalleryImages for settings-aware display */
+export async function fetchGalleryImageUrls(): Promise<string[]> {
+  const items = await fetchGalleryImages();
+  return items.map((item) => item.url);
 }

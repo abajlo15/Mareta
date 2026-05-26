@@ -1,7 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import type { CartItem as CartItemType } from '@/types/cart';
+import PositionedCoverImage from '@/components/PositionedCoverImage';
+import { getImageSettings } from '@/types/imageDisplay';
 import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
 
 interface CartItemProps {
@@ -14,6 +15,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
   const imageUrl = item.product.images && item.product.images.length > 0 
     ? item.product.images[0] 
     : '/placeholder.svg';
+  const imageSettings = getImageSettings(item.product.image_settings, imageUrl);
   const itemHasDiscount = hasDiscount(item.product.discount_percentage);
   const itemUnitPrice = calculateDiscountedPrice(
     item.product.price,
@@ -25,11 +27,11 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
   return (
     <div className="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-soft border border-gray-100">
       <div className="relative w-24 h-24 flex-shrink-0">
-        <Image
+        <PositionedCoverImage
           src={imageUrl}
           alt={item.product.name}
-          fill
-          className="object-cover rounded"
+          settings={imageSettings}
+          className="rounded"
           sizes="96px"
         />
       </div>

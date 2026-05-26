@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import ColorVariantSelect from '@/components/ColorVariantSelect';
+import PositionedCoverImage from '@/components/PositionedCoverImage';
+import { getImageSettings } from '@/types/imageDisplay';
 import { fetchProduct } from '@/lib/products';
 import { addToCart } from '@/lib/cart';
 import type { Product } from '@/types/product';
@@ -77,6 +78,7 @@ export default function ProductDetailPage() {
     (category) => category.trim() !== "Muške naočale"
   );
   const mainImage = images[selectedImageIndex] || images[0];
+  const mainImageSettings = getImageSettings(product.image_settings, mainImage);
   const hasMultipleImages = images.length > 1;
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
@@ -131,11 +133,12 @@ export default function ProductDetailPage() {
                 </button>
               </>
             )}
-            <Image
+            <PositionedCoverImage
               src={mainImage}
               alt={product.name}
-              fill
-              className="object-cover rounded-lg"
+              settings={mainImageSettings}
+              preset="productCard"
+              className="rounded-lg"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>

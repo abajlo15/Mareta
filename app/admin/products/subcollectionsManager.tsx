@@ -1,12 +1,22 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AdminImageThumb from "@/components/admin/AdminImageThumb";
+import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import {
+  DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  settingsFromRowFields,
+  type ImageDisplaySettings,
+} from "@/types/imageDisplay";
 
 type Subcollection = {
   id: string;
   name: string;
   thumbnail_url: string | null;
   collection_id: string;
+  thumbnail_focal_x?: number | null;
+  thumbnail_focal_y?: number | null;
+  thumbnail_zoom?: number | null;
 };
 
 type Collection = {
@@ -24,11 +34,19 @@ export default function AdminSubcollectionsManager({
   const [name, setName] = useState("");
   const [collectionId, setCollectionId] = useState<string>(collections[0]?.id ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailSettings, setThumbnailSettings] = useState<ImageDisplaySettings>({
+    ...DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  });
+  const [repositionOpen, setRepositionOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingCollectionId, setEditingCollectionId] = useState("");
   const [editingThumbnailUrl, setEditingThumbnailUrl] = useState("");
+  const [editingThumbnailSettings, setEditingThumbnailSettings] = useState<ImageDisplaySettings>({
+    ...DEFAULT_IMAGE_DISPLAY_SETTINGS,
+  });
+  const [editingRepositionOpen, setEditingRepositionOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -71,6 +89,8 @@ export default function AdminSubcollectionsManager({
     try {
       const url = await uploadImage(file);
       setThumbnailUrl(url);
+      setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+      setRepositionOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
     } finally {
@@ -87,6 +107,8 @@ export default function AdminSubcollectionsManager({
     try {
       const url = await uploadImage(file);
       setEditingThumbnailUrl(url);
+      setEditingThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+      setEditingRepositionOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Greška pri uploadu slike.");
     } finally {
@@ -111,6 +133,7 @@ export default function AdminSubcollectionsManager({
         name,
         collectionId,
         thumbnailUrl: thumbnailUrl || null,
+        thumbnailSettings,
       }),
     });
 
@@ -125,6 +148,7 @@ export default function AdminSubcollectionsManager({
     setName("");
     setCollectionId(collections[0]?.id ?? "");
     setThumbnailUrl("");
+    setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -146,6 +170,7 @@ export default function AdminSubcollectionsManager({
         name: editingName,
         collectionId: editingCollectionId,
         thumbnailUrl: editingThumbnailUrl || null,
+        thumbnailSettings: editingThumbnailSettings,
       }),
     });
 
@@ -161,6 +186,7 @@ export default function AdminSubcollectionsManager({
     setEditingName("");
     setEditingCollectionId("");
     setEditingThumbnailUrl("");
+    setEditingThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
     if (editFileInputRef.current) {
       editFileInputRef.current.value = "";
     }
@@ -230,8 +256,31 @@ export default function AdminSubcollectionsManager({
             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 file:cursor-pointer"
           />
           {uploading && <p className="text-sm text-slate-500 mt-1">Upload slike...</p>}
-          {thumbnailUrl && <img src={thumbnailUrl} alt="" className="mt-2 w-16 h-16 object-cover rounded border" />}
+          {thumbnailUrl && (
+            <div className="mt-2">
+              <AdminImageThumb
+                url={thumbnailUrl}
+                settings={thumbnailSettings}
+                onReposition={() => setRepositionOpen(true)}
+                onRemove={() => {
+                  setThumbnailUrl("");
+                  setThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+                }}
+              />
+            </div>
+          )}
         </div>
+        <ImageRepositionModal
+          open={repositionOpen && !!thumbnailUrl}
+          imageUrl={thumbnailUrl}
+          preset="collectionTile"
+          initialSettings={thumbnailSettings}
+          onClose={() => setRepositionOpen(false)}
+          onSave={(settings) => {
+            setThumbnailSettings(settings);
+            setRepositionOpen(false);
+          }}
+        />
         <button
           type="submit"
           disabled={loading || uploading}
@@ -262,11 +311,19 @@ export default function AdminSubcollectionsManager({
             <div key={item.id} className="flex items-center gap-2">
               {editingId === item.id ? (
                 <>
-                  <img
-                    src={editingThumbnailUrl || "/placeholder.svg"}
-                    alt=""
-                    className="w-10 h-10 rounded object-cover border"
-                  />
+                  {editingThumbnailUrl ? (
+                    <AdminImageThumb
+                      url={editingThumbnailUrl}
+                      settings={editingThumbnailSettings}
+                      onReposition={() => setEditingRepositionOpen(true)}
+                      onRemove={() => {
+                        setEditingThumbnailUrl("");
+                        setEditingThumbnailSettings({ ...DEFAULT_IMAGE_DISPLAY_SETTINGS });
+                      }}
+                    />
+                  ) : (
+                    <img src="/placeholder.svg" alt="" className="h-10 w-10 rounded border object-cover" />
+                  )}
                   <div className="flex-1 space-y-1">
                   <input
                     className="w-full border border-slate-300 rounded px-2 py-1"
@@ -337,6 +394,13 @@ export default function AdminSubcollectionsManager({
                       setEditingName(item.name);
                       setEditingCollectionId(item.collection_id);
                       setEditingThumbnailUrl(item.thumbnail_url ?? "");
+                      setEditingThumbnailSettings(
+                        settingsFromRowFields({
+                          focal_x: item.thumbnail_focal_x,
+                          focal_y: item.thumbnail_focal_y,
+                          zoom: item.thumbnail_zoom,
+                        })
+                      );
                     }}
                     className="px-2 py-1 rounded bg-amber-500 text-white hover:bg-amber-600"
                   >
@@ -358,6 +422,18 @@ export default function AdminSubcollectionsManager({
           <p className="text-slate-500">Nema podkolekcija za odabranu kolekciju.</p>
         )}
       </div>
+
+      <ImageRepositionModal
+        open={editingRepositionOpen && !!editingThumbnailUrl}
+        imageUrl={editingThumbnailUrl}
+        preset="collectionTile"
+        initialSettings={editingThumbnailSettings}
+        onClose={() => setEditingRepositionOpen(false)}
+        onSave={(settings) => {
+          setEditingThumbnailSettings(settings);
+          setEditingRepositionOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import { fetchOrder } from '@/lib/orders';
+import PositionedCoverImage from '@/components/PositionedCoverImage';
+import { getImageSettings, parseImageSettingsMap } from '@/types/imageDisplay';
 import type { OrderWithItems } from '@/types/order';
 
 const statusLabels: Record<string, string> = {
@@ -73,17 +74,23 @@ export default function OrderDetailPage() {
                   item.product.images && item.product.images.length > 0
                     ? item.product.images[0]
                     : '/placeholder.svg';
+                const imageSettings = getImageSettings(
+                  parseImageSettingsMap(
+                    (item.product as { image_settings?: unknown }).image_settings
+                  ),
+                  imageUrl
+                );
                 return (
                   <div
                     key={item.id}
                     className="flex items-center space-x-4 border-b pb-4 last:border-0"
                   >
                     <div className="relative w-20 h-20 flex-shrink-0">
-                      <Image
+                      <PositionedCoverImage
                         src={imageUrl}
                         alt={item.product.name}
-                        fill
-                        className="object-cover rounded"
+                        settings={imageSettings}
+                        className="rounded"
                         sizes="80px"
                       />
                     </div>

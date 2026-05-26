@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { parseImageSettingsMap, pruneImageSettingsMap } from "@/types/imageDisplay";
 import {
   getNextCollectionPosition,
   getNextSubcollectionPosition,
@@ -19,7 +20,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images } = body as {
+    const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images, imageSettings } = body as {
       name?: string;
       description?: string | null;
       price?: number;
@@ -30,6 +31,7 @@ export async function PATCH(request: Request, { params }: Params) {
       stock?: number;
       isPolarized?: boolean;
       images?: string[];
+      imageSettings?: unknown;
     };
 
     if (!name || typeof price !== "number") {
@@ -80,6 +82,12 @@ export async function PATCH(request: Request, { params }: Params) {
         ? Math.min(100, Math.max(0, Math.round(discountPercentage)))
         : 0;
 
+    const imageList = Array.isArray(images) ? images : [];
+    const prunedImageSettings = pruneImageSettingsMap(
+      parseImageSettingsMap(imageSettings),
+      imageList
+    );
+
     const { error } = await supabase
       .from("products")
       .update({
@@ -91,7 +99,8 @@ export async function PATCH(request: Request, { params }: Params) {
         stock: stockValue,
         is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
         discount_percentage: discountValue,
-        images: Array.isArray(images) ? images : [],
+        images: imageList,
+        image_settings: prunedImageSettings,
       })
       .eq("id", id);
 

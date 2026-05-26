@@ -10,13 +10,13 @@ export async function GET() {
     const supabase = await createClient();
     let { data, error } = await supabase
       .from("gallery_images")
-      .select("id, image_url")
+      .select("id, image_url, focal_x, focal_y, zoom")
       .order("position", { ascending: true });
 
     if (error) {
       const fallback = await supabase
         .from("gallery_images")
-        .select("id, image_url")
+        .select("id, image_url, focal_x, focal_y, zoom")
         .order("created_at", { ascending: true });
       data = fallback.data;
       error = fallback.error;
