@@ -6,6 +6,7 @@ import { getImageSettings } from '@/types/imageDisplay';
 import PositionedCoverImage from '@/components/PositionedCoverImage';
 import FavoriteToggle from './FavoriteToggle';
 import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
+import { hasAnyStock } from '@/lib/shirtSizes';
 
 interface ProductCardProps {
   product: Product;
@@ -19,6 +20,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
   const discountPercentage = normalizeDiscountPercentage(product.discount_percentage);
+  const inStock = hasAnyStock({ ...product, is_shirt: product.is_shirt ?? false });
 
   return (
     <Link href={`/products/${product.id}`}>
@@ -57,7 +59,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <p className="text-xs font-semibold text-red-600">Popust -{discountPercentage}%</p>
               )}
             </div>
-            {product.stock === 0 && (
+            {!inStock && (
               <span className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full font-medium">Nema na zalihi</span>
             )}
           </div>

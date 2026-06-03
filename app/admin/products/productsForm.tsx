@@ -3,6 +3,11 @@
 import { useRef, useState } from "react";
 import AdminImageThumb from "@/components/admin/AdminImageThumb";
 import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import AdminShirtSizesFields, {
+  createEmptySizeStocks,
+  type SizeStockRow,
+} from "@/components/admin/AdminShirtSizesFields";
+import type { ShirtSize } from "@/lib/shirtSizes";
 import {
   DEFAULT_IMAGE_DISPLAY_SETTINGS,
   getImageSettings,
@@ -38,6 +43,9 @@ export default function AdminProductsForm({
   const [categoriesInput, setCategoriesInput] = useState("");
   const [stock, setStock] = useState<string>("0");
   const [discountPercentage, setDiscountPercentage] = useState<string>("0");
+  const [isShirt, setIsShirt] = useState(false);
+  const [sizeStocks, setSizeStocks] = useState<SizeStockRow[]>(createEmptySizeStocks);
+  const [sizeToAdd, setSizeToAdd] = useState<ShirtSize>("M");
   const [isPolarized, setIsPolarized] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
   const [imageSettings, setImageSettings] = useState<ImageSettingsMap>({});
@@ -137,6 +145,10 @@ export default function AdminProductsForm({
       setError("Odaberi barem jednu kolekciju.");
       return;
     }
+    if (isShirt && sizeStocks.length === 0) {
+      setError("Dodaj barem jednu veličinu majice.");
+      return;
+    }
     setLoading(true);
 
     const res = await fetch("/api/admin/products", {
@@ -153,7 +165,14 @@ export default function AdminProductsForm({
           .map((item) => item.trim())
           .filter(Boolean),
         subcollectionId: subcollectionId || null,
-        stock: Math.max(0, parseInt(stock, 10) || 0),
+        stock: isShirt ? 0 : Math.max(0, parseInt(stock, 10) || 0),
+        isShirt,
+        sizeStocks: isShirt
+          ? sizeStocks.map((row) => ({
+              size: row.size,
+              stock: Math.max(0, parseInt(row.stock, 10) || 0),
+            }))
+          : [],
         isPolarized,
         images,
         imageSettings,
@@ -175,6 +194,9 @@ export default function AdminProductsForm({
     setSubcollectionId("");
     setCategoriesInput("");
     setStock("0");
+    setIsShirt(false);
+    setSizeStocks(createEmptySizeStocks());
+    setSizeToAdd("M");
     setDiscountPercentage("0");
     setIsPolarized(false);
     setImages([]);
@@ -221,17 +243,28 @@ export default function AdminProductsForm({
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Količina</label>
-        <input
-          className="w-full border border-slate-300 rounded px-3 py-2"
-          type="number"
-          min="0"
-          placeholder="Količina (zaliha)"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-        />
-      </div>
+      {!isShirt && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Količina</label>
+          <input
+            className="w-full border border-slate-300 rounded px-3 py-2"
+            type="number"
+            min="0"
+            placeholder="Količina (zaliha)"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+          />
+        </div>
+      )}
+
+      <AdminShirtSizesFields
+        isShirt={isShirt}
+        onIsShirtChange={setIsShirt}
+        sizeStocks={sizeStocks}
+        onSizeStocksChange={setSizeStocks}
+        sizeToAdd={sizeToAdd}
+        onSizeToAddChange={setSizeToAdd}
+      />
 
       <div>
         <label className="block text-sm font-medium mb-1">Popust</label>

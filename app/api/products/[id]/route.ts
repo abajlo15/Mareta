@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchColorVariantsForProduct } from '@/lib/productColorGroups';
 import { PRODUCT_DETAIL_SELECT } from '@/lib/productSelect';
+import { attachSizeOptions } from '@/lib/shirtSizes';
 import { z } from 'zod';
 
 const productUpdateSchema = z.object({
@@ -38,8 +39,15 @@ export async function GET(
 
     const colorVariants = await fetchColorVariantsForProduct(supabase, id);
 
-    const normalized = {
+    const withSizes = attachSizeOptions({
       ...data,
+      is_shirt: Boolean(data.is_shirt),
+      product_sizes: data.product_sizes as { size: string; stock: number }[] | undefined,
+    });
+
+    const normalized = {
+      ...withSizes,
+      is_shirt: withSizes.is_shirt ?? false,
       collections: (data.product_collections ?? [])
         .map((item: { collection: unknown[] | unknown | null }) =>
           Array.isArray(item.collection) ? (item.collection[0] ?? null) : item.collection

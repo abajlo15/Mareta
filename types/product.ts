@@ -1,4 +1,10 @@
 import type { ImageSettingsMap } from "@/types/imageDisplay";
+import type { ShirtSize } from "@/lib/shirtSizes";
+
+export interface ProductSizeOption {
+  size: ShirtSize;
+  stock: number;
+}
 
 export interface Product {
   id: string;
@@ -10,6 +16,8 @@ export interface Product {
   categories: string[];
   subcollection_id: string | null;
   stock: number;
+  is_shirt: boolean;
+  size_options?: ProductSizeOption[];
   is_polarized: boolean;
   discount_percentage: number;
   instagram_url: string | null;
@@ -56,6 +64,7 @@ export interface ProductInsert {
   subcollection_id?: string | null;
   collection_ids?: string[];
   stock?: number;
+  is_shirt?: boolean;
   is_polarized?: boolean;
   discount_percentage?: number;
   instagram_url?: string | null;
@@ -71,6 +80,7 @@ export interface ProductUpdate {
   subcollection_id?: string | null;
   collection_ids?: string[];
   stock?: number;
+  is_shirt?: boolean;
   is_polarized?: boolean;
   discount_percentage?: number;
   instagram_url?: string | null;

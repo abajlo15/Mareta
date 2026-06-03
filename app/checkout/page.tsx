@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getCart, clearCart } from '@/lib/cart';
+import { getCart, clearCart, getCartItemLineKey } from '@/lib/cart';
 import { createOrder } from '@/lib/orders';
 import {
   calculateShipping,
@@ -273,6 +273,7 @@ function CheckoutPageContent() {
         product_id: item.product.id,
         quantity: item.quantity,
         price: calculateDiscountedPrice(item.product.price, item.product.discount_percentage),
+        size: item.selected_size ?? null,
       }));
 
       const isBoxNow = isBoxNowSelected;
@@ -502,9 +503,10 @@ function CheckoutPageContent() {
             <h2 className="text-xl font-semibold mb-4">Sažetak narudžbe</h2>
             <div className="space-y-2 mb-4">
               {cart.items.map((item) => (
-                <div key={item.product.id} className="flex justify-between text-sm">
+                <div key={getCartItemLineKey(item)} className="flex justify-between text-sm">
                   <span>
-                    {item.product.name} x {item.quantity}
+                    {item.product.name}
+                    {item.selected_size ? ` (${item.selected_size})` : ''} x {item.quantity}
                   </span>
                   <span>
                     {(

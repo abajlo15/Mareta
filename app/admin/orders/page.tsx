@@ -34,6 +34,7 @@ export default async function AdminOrdersPage() {
         id,
         quantity,
         price,
+        size,
         product:products (
           id,
           name

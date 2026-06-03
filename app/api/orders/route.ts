@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { OrderInsert, OrderItemInsert } from '@/types/order';
 import { calculateOrderTotal } from '@/lib/pricing';
 import { sendOrderCreatedEmails } from '@/lib/email';
+import { isShirtSize } from '@/lib/shirtSizes';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const orderSchema = z.object({
   total_amount: z.number().positive(),
@@ -25,6 +27,7 @@ const orderSchema = z.object({
       product_id: z.string().uuid(),
       quantity: z.number().int().positive(),
       price: z.number().positive(),
+      size: z.string().nullable().optional(),
     })
   ),
   payment_intent_id: z.string().optional(),
@@ -34,6 +37,63 @@ const orderSchema = z.object({
   boxnow_payment_mode: z.enum(['prepaid', 'cod']).optional(),
   boxnow_amount_to_be_collected: z.number().min(0).optional(),
 });
+
+async function validateOrderItemsStock(
+  supabase: SupabaseClient,
+  items: { product_id: string; quantity: number; size?: string | null }[]
+): Promise<string | null> {
+  const productIds = [...new Set(items.map((item) => item.product_id))];
+  const { data: products, error: productsError } = await supabase
+    .from('products')
+    .select('id, is_shirt, stock')
+    .in('id', productIds);
+
+  if (productsError) {
+    return productsError.message;
+  }
+
+  const productById = new Map((products ?? []).map((p) => [p.id, p]));
+
+  const shirtProductIds = (products ?? []).filter((p) => p.is_shirt).map((p) => p.id);
+  const { data: sizeRows, error: sizesError } = shirtProductIds.length
+    ? await supabase
+        .from('product_sizes')
+        .select('product_id, size, stock')
+        .in('product_id', shirtProductIds)
+    : { data: [], error: null };
+
+  if (sizesError) {
+    return sizesError.message;
+  }
+
+  const stockByProductSize = new Map(
+    (sizeRows ?? []).map((row) => [`${row.product_id}::${row.size}`, row.stock])
+  );
+
+  for (const item of items) {
+    const product = productById.get(item.product_id);
+    if (!product) {
+      return 'Proizvod u narudžbi ne postoji.';
+    }
+
+    if (product.is_shirt) {
+      const size = item.size ?? null;
+      if (!size || !isShirtSize(size)) {
+        return 'Majica u narudžbi mora imati valjanu veličinu.';
+      }
+      const available = stockByProductSize.get(`${item.product_id}::${size}`) ?? 0;
+      if (item.quantity > available) {
+        return `Nedovoljna zaliha za veličinu ${size}.`;
+      }
+    } else if (item.size) {
+      return 'Ovaj proizvod ne podržava odabir veličine.';
+    } else if (item.quantity > (product.stock ?? 0)) {
+      return 'Nedovoljna zaliha za proizvod.';
+    }
+  }
+
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,6 +142,11 @@ export async function POST(request: NextRequest) {
     );
     const totalAmount = calculateOrderTotal(subtotal);
 
+    const stockError = await validateOrderItemsStock(supabase, validatedData.items);
+    if (stockError) {
+      return NextResponse.json({ error: stockError }, { status: 400 });
+    }
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -117,6 +182,7 @@ export async function POST(request: NextRequest) {
       product_id: item.product_id,
       quantity: item.quantity,
       price: item.price,
+      size: item.size ?? null,
     }));
 
     const { error: itemsError } = await supabase

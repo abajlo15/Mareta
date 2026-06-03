@@ -32,6 +32,7 @@ export async function createOrder(orderData: {
     product_id: string;
     quantity: number;
     price: number;
+    size?: string | null;
   }>;
   payment_method: 'card' | 'cash_on_delivery';
   payment_intent_id?: string;

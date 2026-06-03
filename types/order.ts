@@ -40,6 +40,7 @@ export interface OrderItem {
   product_id: string;
   quantity: number;
   price: number;
+  size: string | null;
   created_at: string;
 }
 
@@ -87,5 +88,6 @@ export interface OrderItemInsert {
   product_id: string;
   quantity: number;
   price: number;
+  size?: string | null;
 }
 

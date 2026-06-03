@@ -4,6 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminImageThumb from "@/components/admin/AdminImageThumb";
 import ImageRepositionModal from "@/components/admin/ImageRepositionModal";
+import AdminShirtSizesFields, {
+  sizeStocksFromOptions,
+  type SizeStockRow,
+} from "@/components/admin/AdminShirtSizesFields";
+import type { ShirtSize } from "@/lib/shirtSizes";
+import type { ProductSizeOption } from "@/types/product";
 import {
   DEFAULT_IMAGE_DISPLAY_SETTINGS,
   getImageSettings,
@@ -21,6 +27,8 @@ type Product = {
   collection_ids?: string[] | null;
   subcollection_id?: string | null;
   stock?: number;
+  is_shirt?: boolean;
+  size_options?: ProductSizeOption[];
   is_polarized?: boolean;
   discount_percentage?: number;
   images?: string[] | null;
@@ -60,6 +68,11 @@ export default function AdminProductEditForm({
   const [discountPercentage, setDiscountPercentage] = useState<string>(
     String(product.discount_percentage ?? 0)
   );
+  const [isShirt, setIsShirt] = useState<boolean>(product.is_shirt ?? false);
+  const [sizeStocks, setSizeStocks] = useState<SizeStockRow[]>(
+    sizeStocksFromOptions(product.size_options)
+  );
+  const [sizeToAdd, setSizeToAdd] = useState<ShirtSize>("M");
   const [isPolarized, setIsPolarized] = useState<boolean>(product.is_polarized ?? false);
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [imageSettings, setImageSettings] = useState<ImageSettingsMap>(
@@ -80,6 +93,8 @@ export default function AdminProductEditForm({
     setSubcollectionId(product.subcollection_id ?? "");
     setCategoriesInput((product.categories ?? []).join(", "));
     setStock(String(product.stock ?? 0));
+    setIsShirt(product.is_shirt ?? false);
+    setSizeStocks(sizeStocksFromOptions(product.size_options));
     setDiscountPercentage(String(product.discount_percentage ?? 0));
     setIsPolarized(product.is_polarized ?? false);
     setImages(product.images ?? []);
@@ -175,6 +190,10 @@ export default function AdminProductEditForm({
       setError("Odaberi barem jednu kolekciju.");
       return;
     }
+    if (isShirt && sizeStocks.length === 0) {
+      setError("Dodaj barem jednu veličinu majice.");
+      return;
+    }
     setLoading(true);
 
     const res = await fetch(`/api/admin/products/${product.id}`, {
@@ -191,7 +210,14 @@ export default function AdminProductEditForm({
           .map((item) => item.trim())
           .filter(Boolean),
         subcollectionId: subcollectionId || null,
-        stock: Math.max(0, parseInt(stock, 10) || 0),
+        stock: isShirt ? 0 : Math.max(0, parseInt(stock, 10) || 0),
+        isShirt,
+        sizeStocks: isShirt
+          ? sizeStocks.map((row) => ({
+              size: row.size,
+              stock: Math.max(0, parseInt(row.stock, 10) || 0),
+            }))
+          : [],
         isPolarized,
         images,
         imageSettings,
@@ -248,17 +274,28 @@ export default function AdminProductEditForm({
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Količina</label>
-        <input
-          className="w-full border border-slate-300 rounded px-3 py-2"
-          type="number"
-          min="0"
-          placeholder="Količina (zaliha)"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-        />
-      </div>
+      {!isShirt && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Količina</label>
+          <input
+            className="w-full border border-slate-300 rounded px-3 py-2"
+            type="number"
+            min="0"
+            placeholder="Količina (zaliha)"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+          />
+        </div>
+      )}
+
+      <AdminShirtSizesFields
+        isShirt={isShirt}
+        onIsShirtChange={setIsShirt}
+        sizeStocks={sizeStocks}
+        onSizeStocksChange={setSizeStocks}
+        sizeToAdd={sizeToAdd}
+        onSizeToAddChange={setSizeToAdd}
+      />
 
       <div>
         <label className="block text-sm font-medium mb-1">Popust</label>

@@ -4,11 +4,12 @@ import {
   ADMIN_PRODUCTS_SELECT_NO_POSITION,
   ADMIN_PRODUCTS_SELECT_WITH_POSITIONS,
 } from "@/lib/productSelect";
+import { attachSizeOptions } from "@/lib/shirtSizes";
 
 const PUBLIC_SELECT_VARIANTS = [
-  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url)), subcollection_product_positions!subcollection_product_positions_product_id_fkey(position)",
-  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url))",
-  "*, subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))",
+  "*, product_sizes(size, stock), subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url)), subcollection_product_positions!subcollection_product_positions_product_id_fkey(position)",
+  "*, product_sizes(size, stock), subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(position, collection:collections(id, name, slug, thumbnail_url))",
+  "*, product_sizes(size, stock), subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))",
 ] as const;
 
 const ADMIN_SELECT_VARIANTS = [
@@ -67,8 +68,15 @@ export function normalizeProductRow(product: ProductRow) {
       ? product.image_settings
       : {};
 
-  return {
+  const withSizes = attachSizeOptions({
     ...product,
+    is_shirt: Boolean(product.is_shirt),
+    product_sizes: product.product_sizes as { size: string; stock: number }[] | undefined,
+  });
+
+  return {
+    ...withSizes,
+    is_shirt: withSizes.is_shirt ?? false,
     image_settings: imageSettings,
     collections: productCollections
       .map((item) => {

@@ -9,6 +9,7 @@ import { fetchProduct } from '@/lib/products';
 import { addToCart } from '@/lib/cart';
 import type { Product } from '@/types/product';
 import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
+import { getProductStock, hasAnyStock, type ShirtSize } from '@/lib/shirtSizes';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -17,6 +18,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<ShirtSize | ''>('');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
@@ -43,12 +45,12 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (product && !isPending) {
-      addToCart(product, quantity);
-      startTransition(() => {
-        router.push('/cart');
-      });
-    }
+    if (!product || isPending) return;
+    if (product.is_shirt && !selectedSize) return;
+    addToCart(product, quantity, product.is_shirt ? (selectedSize as ShirtSize) : null);
+    startTransition(() => {
+      router.push('/cart');
+    });
   };
 
   if (loading) {
@@ -83,6 +85,14 @@ export default function ProductDetailPage() {
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
   const discountPercentage = normalizeDiscountPercentage(product.discount_percentage);
+  const availableSizeOptions = (product.size_options ?? []).filter((option) => option.stock > 0);
+  const selectedSizeStock = product.is_shirt && selectedSize
+    ? getProductStock(product, selectedSize)
+    : getProductStock(product);
+  const inStock = hasAnyStock(product);
+  const canAddToCart =
+    inStock &&
+    (!product.is_shirt || (selectedSize !== '' && selectedSizeStock > 0));
   const showPreviousImage = () => {
     if (!hasMultipleImages) {
       return;
@@ -168,12 +178,40 @@ export default function ProductDetailPage() {
             <p className="text-gray-700 mb-6">{product.description}</p>
           )}
 
+          {product.is_shirt && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Veličina</label>
+              <select
+                value={selectedSize}
+                onChange={(e) => {
+                  const nextSize = e.target.value as ShirtSize | '';
+                  setSelectedSize(nextSize);
+                  setQuantity(1);
+                }}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                disabled={availableSizeOptions.length === 0}
+              >
+                <option value="">Odaberi veličinu</option>
+                {availableSizeOptions.map((option) => (
+                  <option key={option.size} value={option.size}>
+                    {option.size}
+                  </option>
+                ))}
+              </select>
+              {availableSizeOptions.length === 0 && (
+                <p className="text-sm text-red-600 mt-2">Nema dostupnih veličina.</p>
+              )}
+            </div>
+          )}
+
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">Količina</label>
             <div className="flex items-center space-x-2">
               <button
+                type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 border border-gray-300 rounded hover:bg-gray-100"
+                disabled={!canAddToCart}
+                className="w-10 h-10 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
               >
                 -
               </button>
@@ -182,31 +220,35 @@ export default function ProductDetailPage() {
                 value={quantity}
                 onChange={(e) =>
                   setQuantity(
-                    Math.min(product.stock, Math.max(1, parseInt(e.target.value, 10) || 1))
+                    Math.min(selectedSizeStock, Math.max(1, parseInt(e.target.value, 10) || 1))
                   )
                 }
                 min="1"
-                max={product.stock}
-                className="w-20 text-center border border-gray-300 rounded"
+                max={selectedSizeStock}
+                disabled={!canAddToCart}
+                className="w-20 text-center border border-gray-300 rounded disabled:bg-gray-100"
               />
               <button
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                className="w-10 h-10 border border-gray-300 rounded hover:bg-gray-100"
+                type="button"
+                onClick={() => setQuantity(Math.min(selectedSizeStock, quantity + 1))}
+                disabled={!canAddToCart}
+                className="w-10 h-10 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
               >
                 +
               </button>
             </div>
-            {product.stock === 0 && (
+            {!inStock && (
               <p className="text-sm text-red-600 mt-2">Nema na zalihi</p>
             )}
           </div>
 
           <button
+            type="button"
             onClick={handleAddToCart}
-            disabled={product.stock === 0 || isPending}
+            disabled={!canAddToCart || isPending}
             className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg hover:from-primary-500 hover:to-primary-600 transition-all duration-200 font-semibold shadow-elegant disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? 'Dodavanje...' : product.stock > 0 ? 'Dodaj u košaricu' : 'Nema na zalihi'}
+            {isPending ? 'Dodavanje...' : canAddToCart ? 'Dodaj u košaricu' : 'Nema na zalihi'}
           </button>
         </div>
       </div>

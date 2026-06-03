@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FEATURED_PRODUCTS_SELECT } from "@/lib/productSelect";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { attachSizeOptions } from "@/lib/shirtSizes";
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -17,7 +18,13 @@ export async function GET() {
   const products = (data ?? [])
     .map((item) => {
       const product = Array.isArray(item.product) ? item.product[0] : item.product;
-      return product ?? null;
+      if (!product) return null;
+      const withSizes = attachSizeOptions({
+        ...product,
+        is_shirt: Boolean(product.is_shirt),
+        product_sizes: product.product_sizes as { size: string; stock: number }[] | undefined,
+      });
+      return { ...withSizes, is_shirt: withSizes.is_shirt ?? false };
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 

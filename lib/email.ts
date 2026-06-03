@@ -5,6 +5,7 @@ const ADMIN_NOTIFICATION_EMAIL = 'maretasunglasseshr@gmail.com';
 type OrderEmailItem = {
   quantity?: number;
   price?: number;
+  size?: string | null;
   product?: { name?: string } | { name?: string }[] | null;
 };
 
@@ -45,7 +46,8 @@ function buildItemsRows(order: OrderEmailPayload): string {
       const qty = item.quantity || 0;
       const price = Number(item.price || 0);
       const name = resolveProductName(item);
-      return `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;">${name} x ${qty}</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;">${formatMoney(price * qty)}</td></tr>`;
+      const sizeLabel = item.size ? ` (${item.size})` : '';
+      return `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;">${name}${sizeLabel} x ${qty}</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;">${formatMoney(price * qty)}</td></tr>`;
     })
     .join('');
 }

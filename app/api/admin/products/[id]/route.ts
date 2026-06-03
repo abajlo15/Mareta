@@ -6,6 +6,7 @@ import {
   getNextSubcollectionPosition,
 } from "@/lib/productPositions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { resolveProductStockFields, syncProductSizes } from "@/lib/productSizesAdmin";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,7 +21,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
 
     const body = await request.json();
-    const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isPolarized, images, imageSettings } = body as {
+    const { name, description, price, discountPercentage, categories, collectionIds, subcollectionId, stock, isShirt, sizeStocks, isPolarized, images, imageSettings } = body as {
       name?: string;
       description?: string | null;
       price?: number;
@@ -29,6 +30,8 @@ export async function PATCH(request: Request, { params }: Params) {
       collectionIds?: string[];
       subcollectionId?: string | null;
       stock?: number;
+      isShirt?: boolean;
+      sizeStocks?: unknown;
       isPolarized?: boolean;
       images?: string[];
       imageSettings?: unknown;
@@ -76,7 +79,12 @@ export async function PATCH(request: Request, { params }: Params) {
       }
     }
 
-    const stockValue = typeof stock === "number" ? Math.max(0, stock) : 0;
+    const isShirtValue = isShirt === true;
+    const stockResolved = resolveProductStockFields(isShirtValue, stock, sizeStocks);
+    if (!stockResolved.ok) {
+      return NextResponse.json({ error: stockResolved.error }, { status: 400 });
+    }
+
     const discountValue =
       typeof discountPercentage === "number"
         ? Math.min(100, Math.max(0, Math.round(discountPercentage)))
@@ -96,7 +104,8 @@ export async function PATCH(request: Request, { params }: Params) {
         price,
         categories: Array.isArray(categories) ? categories : [],
         subcollection_id: normalizedSubcollectionId,
-        stock: stockValue,
+        stock: stockResolved.stock,
+        is_shirt: stockResolved.is_shirt,
         is_polarized: typeof isPolarized === "boolean" ? isPolarized : false,
         discount_percentage: discountValue,
         images: imageList,
@@ -106,6 +115,16 @@ export async function PATCH(request: Request, { params }: Params) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const sizeSync = await syncProductSizes(
+      supabase,
+      id,
+      stockResolved.is_shirt,
+      stockResolved.sizeStocks
+    );
+    if (sizeSync.error) {
+      return NextResponse.json({ error: sizeSync.error }, { status: 500 });
     }
 
     const { error: deleteLinksError } = await supabase

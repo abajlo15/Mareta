@@ -4,7 +4,14 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CartItem from '@/components/CartItem';
-import { getCart, updateCartItemQuantity, removeFromCart, clearCart } from '@/lib/cart';
+import {
+  getCart,
+  getCartItemLineKey,
+  updateCartItemQuantity,
+  removeFromCart,
+  clearCart,
+  type CartLineKey,
+} from '@/lib/cart';
 import { calculateShipping, calculateOrderTotal, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing';
 import { createClient } from '@/lib/supabase/client';
 import type { Cart } from '@/types/cart';
@@ -42,13 +49,13 @@ export default function CartPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleUpdateQuantity = (productId: string, quantity: number) => {
-    const updatedCart = updateCartItemQuantity(productId, quantity);
+  const handleUpdateQuantity = (lineKey: CartLineKey, quantity: number) => {
+    const updatedCart = updateCartItemQuantity(lineKey, quantity);
     setCart(updatedCart);
   };
 
-  const handleRemove = (productId: string) => {
-    const updatedCart = removeFromCart(productId);
+  const handleRemove = (lineKey: CartLineKey) => {
+    const updatedCart = removeFromCart(lineKey);
     setCart(updatedCart);
   };
 
@@ -86,14 +93,18 @@ export default function CartPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          {cart.items.map((item) => (
-            <CartItem
-              key={item.product.id}
-              item={item}
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemove={handleRemove}
-            />
-          ))}
+          {cart.items.map((item) => {
+            const lineKey = getCartItemLineKey(item);
+            return (
+              <CartItem
+                key={lineKey}
+                lineKey={lineKey}
+                item={item}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemove={handleRemove}
+              />
+            );
+          })}
         </div>
 
         <div className="lg:col-span-1">

@@ -96,6 +96,9 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{item.product.name}</h3>
+                      {item.size && (
+                        <p className="text-sm text-gray-500">Veličina: {item.size}</p>
+                      )}
                       <p className="text-sm text-gray-600">
                         Količina: {item.quantity}
                       </p>

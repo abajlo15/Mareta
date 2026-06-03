@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import AdminProductEditForm from "../productsEditForm";
+import { mapProductSizesFromRows } from "@/lib/shirtSizes";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function AdminProductEditPage({ params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_polarized, images, image_settings, product_collections(collection_id)")
+    .select("id, name, description, price, discount_percentage, categories, subcollection_id, stock, is_shirt, is_polarized, images, image_settings, product_sizes(size, stock), product_collections(collection_id)")
     .eq("id", id)
     .single();
   const { data: collections } = await supabase
@@ -45,6 +46,10 @@ export default async function AdminProductEditPage({ params }: Params) {
       <AdminProductEditForm
         product={{
           ...product,
+          is_shirt: product.is_shirt ?? false,
+          size_options: product.is_shirt
+            ? mapProductSizesFromRows(product.product_sizes ?? [])
+            : undefined,
           collection_ids: (product.product_collections ?? []).map((item) => item.collection_id),
         }}
         collections={collections ?? []}

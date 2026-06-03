@@ -31,6 +31,7 @@ type Order = {
     id: string;
     quantity: number;
     price: number;
+    size?: string | null;
     product?: { id: string; name: string } | null;
   }> | null;
 };
@@ -412,7 +413,10 @@ export default function AdminOrdersClient({ orders }: { orders: Order[] }) {
                       key={item.id}
                       className="flex items-center justify-between text-sm border rounded px-3 py-2"
                     >
-                      <p className="font-medium">{item.product?.name || "Proizvod"}</p>
+                      <p className="font-medium">
+                        {item.product?.name || "Proizvod"}
+                        {item.size ? ` (${item.size})` : ""}
+                      </p>
                       <p className="text-slate-600">
                         {item.quantity} x {item.price.toFixed(2)} €
                       </p>

@@ -4,14 +4,17 @@ import type { CartItem as CartItemType } from '@/types/cart';
 import PositionedCoverImage from '@/components/PositionedCoverImage';
 import { getImageSettings } from '@/types/imageDisplay';
 import { calculateDiscountedPrice, hasDiscount, normalizeDiscountPercentage } from '@/lib/pricing';
+import { getProductStock } from '@/lib/shirtSizes';
+import type { CartLineKey } from '@/lib/cart';
 
 interface CartItemProps {
   item: CartItemType;
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemove: (productId: string) => void;
+  lineKey: CartLineKey;
+  onUpdateQuantity: (lineKey: CartLineKey, quantity: number) => void;
+  onRemove: (lineKey: CartLineKey) => void;
 }
 
-export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
+export default function CartItem({ item, lineKey, onUpdateQuantity, onRemove }: CartItemProps) {
   const imageUrl = item.product.images && item.product.images.length > 0 
     ? item.product.images[0] 
     : '/placeholder.svg';
@@ -22,7 +25,8 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
     item.product.discount_percentage
   );
   const discountPercentage = normalizeDiscountPercentage(item.product.discount_percentage);
-  const hasReachedStockLimit = item.quantity >= item.product.stock;
+  const maxStock = getProductStock(item.product, item.selected_size ?? null);
+  const hasReachedStockLimit = item.quantity >= maxStock;
 
   return (
     <div className="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-soft border border-gray-100">
@@ -37,6 +41,9 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
       </div>
       <div className="flex-1">
         <h3 className="font-semibold text-lg">{item.product.name}</h3>
+        {item.selected_size && (
+          <p className="text-sm text-gray-500">Veličina: {item.selected_size}</p>
+        )}
         {itemHasDiscount && (
           <p className="text-gray-500 text-xs line-through">{item.product.price.toFixed(2)} €</p>
         )}
@@ -47,14 +54,14 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
       </div>
       <div className="flex items-center space-x-2">
         <button
-          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
+          onClick={() => onUpdateQuantity(lineKey, item.quantity - 1)}
           className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100"
         >
           -
         </button>
         <span className="w-12 text-center">{item.quantity}</span>
         <button
-          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+          onClick={() => onUpdateQuantity(lineKey, item.quantity + 1)}
           disabled={hasReachedStockLimit}
           className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -69,7 +76,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
           {(itemUnitPrice * item.quantity).toFixed(2)} €
         </p>
         <button
-          onClick={() => onRemove(item.product.id)}
+          onClick={() => onRemove(lineKey)}
           className="text-red-600 text-sm hover:text-red-800 mt-1"
         >
           Ukloni
