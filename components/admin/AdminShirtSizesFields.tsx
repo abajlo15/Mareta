@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { SHIRT_SIZES, sortShirtSizes, type ShirtSize } from "@/lib/shirtSizes";
 
 export type SizeStockRow = { size: ShirtSize; stock: string };
@@ -17,14 +18,25 @@ export function createEmptySizeStocks(): SizeStockRow[] {
   return [];
 }
 
+function isSizeInUse(size: ShirtSize, rows: SizeStockRow[]): boolean {
+  return rows.some((row) => row.size === size);
+}
+
+function sortSizeStockRows(rows: SizeStockRow[]): SizeStockRow[] {
+  const order = sortShirtSizes(rows.map((row) => row.size));
+  return order.map((size) => rows.find((row) => row.size === size)!);
+}
+
+function getAvailableSizes(rows: SizeStockRow[]): ShirtSize[] {
+  return SHIRT_SIZES.filter((size) => !isSizeInUse(size, rows));
+}
+
 export function sizeStocksFromOptions(
   options: { size: ShirtSize; stock: number }[] | undefined
 ): SizeStockRow[] {
   if (!options?.length) return [];
-  return sortShirtSizes(options.map((o) => o.size)).map((size) => {
-    const found = options.find((o) => o.size === size)!;
-    return { size, stock: String(found.stock) };
-  });
+  const rows = options.map((o) => ({ size: o.size, stock: String(o.stock) }));
+  return sortSizeStockRows(rows);
 }
 
 export default function AdminShirtSizesFields({
@@ -35,22 +47,42 @@ export default function AdminShirtSizesFields({
   sizeToAdd,
   onSizeToAddChange,
 }: AdminShirtSizesFieldsProps) {
-  const usedSizes = new Set(sizeStocks.map((row) => row.size));
-  const availableToAdd = SHIRT_SIZES.filter((size) => !usedSizes.has(size));
+  const availableToAdd = useMemo(
+    () => getAvailableSizes(sizeStocks),
+    [sizeStocks]
+  );
+
+  useEffect(() => {
+    if (!isShirt || availableToAdd.length === 0) return;
+    if (!availableToAdd.includes(sizeToAdd)) {
+      onSizeToAddChange(availableToAdd[0]);
+    }
+  }, [isShirt, availableToAdd, sizeToAdd, onSizeToAddChange]);
 
   const addSize = () => {
+    if (isSizeInUse(sizeToAdd, sizeStocks)) return;
     if (!availableToAdd.includes(sizeToAdd)) return;
-    onSizeStocksChange(
-      sortShirtSizes([...sizeStocks.map((r) => r.size), sizeToAdd]).map((size) => {
-        const existing = sizeStocks.find((r) => r.size === size);
-        if (existing) return existing;
-        return { size, stock: "0" };
-      })
-    );
+
+    const nextRows = sortSizeStockRows([
+      ...sizeStocks,
+      { size: sizeToAdd, stock: "0" },
+    ]);
+    onSizeStocksChange(nextRows);
+
+    const stillAvailable = getAvailableSizes(nextRows);
+    if (stillAvailable.length > 0) {
+      onSizeToAddChange(stillAvailable[0]);
+    }
   };
 
   const removeSize = (size: ShirtSize) => {
-    onSizeStocksChange(sizeStocks.filter((row) => row.size !== size));
+    const nextRows = sizeStocks.filter((row) => row.size === size ? false : true);
+    onSizeStocksChange(nextRows);
+
+    const stillAvailable = getAvailableSizes(nextRows);
+    if (stillAvailable.length > 0) {
+      onSizeToAddChange(stillAvailable[0]);
+    }
   };
 
   const updateStock = (size: ShirtSize, stock: string) => {
@@ -69,6 +101,11 @@ export default function AdminShirtSizesFields({
             onIsShirtChange(e.target.checked);
             if (!e.target.checked) {
               onSizeStocksChange([]);
+            } else {
+              const first = getAvailableSizes([]);
+              if (first.length > 0) {
+                onSizeToAddChange(first[0]);
+              }
             }
           }}
         />
@@ -107,12 +144,12 @@ export default function AdminShirtSizesFields({
             <p className="text-sm text-slate-500">Dodaj barem jednu veličinu.</p>
           ) : (
             <div className="space-y-2">
-              {sizeStocks.map((row) => (
+              {sortSizeStockRows(sizeStocks).map((row) => (
                 <div
                   key={row.size}
                   className="flex flex-wrap items-center gap-2 border border-slate-200 rounded px-3 py-2"
                 >
-                  <span className="text-sm font-semibold w-8">{row.size}</span>
+                  <span className="text-sm font-semibold min-w-[2rem]">{row.size}</span>
                   <div className="flex-1 min-w-[100px]">
                     <label className="sr-only">Zaliha {row.size}</label>
                     <input
