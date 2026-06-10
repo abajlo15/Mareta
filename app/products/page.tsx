@@ -1,12 +1,12 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import PositionedCoverImage from '@/components/PositionedCoverImage';
 import { getThumbnailDisplaySettings } from '@/lib/products';
 import SearchBar from '@/components/SearchBar';
-import Filters from '@/components/Filters';
 import {
   fetchCollections,
   fetchProducts,
@@ -16,8 +16,10 @@ import {
 } from '@/lib/products';
 import type { Product } from '@/types/product';
 
+const collectionNavButtonClass =
+  'px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors';
+
 function ProductsPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -26,23 +28,42 @@ function ProductsPageContent() {
   const [subcollectionId, setSubcollectionId] = useState('');
   const [subcollections, setSubcollections] = useState<Subcollection[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [polarized, setPolarized] = useState<boolean | null>(null);
+  const [collectionCleared, setCollectionCleared] = useState(false);
   const selectedCollectionParam = searchParams.get('kolekcija');
-  const selectedCollection =
-    collections.find((collection) => collection.slug === selectedCollectionParam) ?? null;
+  const effectiveCollectionParam = collectionCleared ? null : selectedCollectionParam;
+  const selectedCollection = effectiveCollectionParam
+    ? collections.find((collection) => collection.slug === effectiveCollectionParam) ?? null
+    : null;
   const selectedSubcollection = subcollections.find((item) => item.id === subcollectionId) ?? null;
+
+  const clearCollectionState = () => {
+    setCollectionCleared(true);
+    setSubcollectionId('');
+    setSearch('');
+  };
+
+  const resetSubcollectionSelection = () => {
+    setSubcollectionId('');
+    setSearch('');
+  };
+
+  useEffect(() => {
+    if (selectedCollectionParam) {
+      setCollectionCleared(false);
+    }
+  }, [selectedCollectionParam]);
 
   useEffect(() => {
     loadProducts();
-  }, [selectedCollectionParam]);
+  }, [effectiveCollectionParam]);
 
   useEffect(() => {
     setSubcollectionId('');
-  }, [selectedCollectionParam]);
+  }, [effectiveCollectionParam]);
 
   useEffect(() => {
     applyFilters();
-  }, [products, search, subcollectionId, polarized, selectedCollection]);
+  }, [products, search, subcollectionId, selectedCollection]);
 
   const loadProducts = async () => {
     try {
@@ -50,7 +71,7 @@ function ProductsPageContent() {
       const loadedCollections = await fetchCollections();
 
       const selectedCollectionId = loadedCollections.find(
-        (collection) => collection.slug === selectedCollectionParam
+        (collection) => collection.slug === effectiveCollectionParam
       )?.id;
       const [data, allSubcollections] = await Promise.all([
         fetchProducts(),
@@ -89,10 +110,6 @@ function ProductsPageContent() {
 
     if (subcollectionId) {
       filtered = filtered.filter((p) => p.subcollection_id === subcollectionId);
-    }
-
-    if (polarized !== null) {
-      filtered = filtered.filter((p) => p.is_polarized === polarized);
     }
 
     const useSubcollectionOrder = Boolean(subcollectionId);
@@ -144,10 +161,10 @@ function ProductsPageContent() {
           <p className="text-gray-600 mb-6 sm:mb-8">Odabirom kolekcije prikazat ćemo ti odgovarajuće proizvode.</p>
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             {collections.map((collection) => (
-              <button
+              <Link
                 key={collection.id}
-                type="button"
-                onClick={() => router.push(`/products?kolekcija=${collection.slug}`)}
+                href={`/products?kolekcija=${collection.slug}`}
+                onClick={() => setCollectionCleared(false)}
                 className="group relative overflow-hidden rounded-xl border border-gray-300 shadow-sm hover:border-primary-400 hover:shadow-md transition-all text-left min-h-[220px] sm:min-h-[250px] w-[calc(50%-0.375rem)] md:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.75rem)] max-w-[260px] min-w-[170px]"
               >
                 <PositionedCoverImage
@@ -162,7 +179,7 @@ function ProductsPageContent() {
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                   <h2 className="text-lg sm:text-xl font-semibold text-white mb-1">{collection.name}</h2>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -178,13 +195,13 @@ function ProductsPageContent() {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-elegant font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-primary-700 text-transparent bg-clip-text">
               {selectedCollection.name}
             </h1>
-            <button
-              type="button"
-              onClick={() => router.push('/products')}
-              className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+            <Link
+              href="/products"
+              onClick={clearCollectionState}
+              className={collectionNavButtonClass}
             >
               Promijeni kolekciju
-            </button>
+            </Link>
           </div>
 
           {selectedCollection.description && (
@@ -240,43 +257,26 @@ function ProductsPageContent() {
           {subcollections.length > 0 && subcollectionId && (
             <button
               type="button"
-              onClick={() => {
-                setSubcollectionId('');
-                setSearch('');
-                setPolarized(null);
-              }}
-              className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+              onClick={resetSubcollectionSelection}
+              className={collectionNavButtonClass}
             >
               Promijeni podkolekciju
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              router.push('/products');
-              setSearch('');
-              setSubcollectionId('');
-              setPolarized(null);
-            }}
-            className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
+          <Link
+            href="/products"
+            onClick={clearCollectionState}
+            className={collectionNavButtonClass}
           >
             Promijeni kolekciju
-          </button>
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <Filters polarized={polarized} onPolarizedChange={setPolarized} />
-        </div>
-
-        <div className="lg:col-span-3">
-          <div className="mb-6">
-            <SearchBar value={search} onChange={setSearch} />
-          </div>
-          <ProductGrid products={filteredProducts} />
-        </div>
+      <div className="mb-6">
+        <SearchBar value={search} onChange={setSearch} />
       </div>
+      <ProductGrid products={filteredProducts} />
     </div>
   );
 }

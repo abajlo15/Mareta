@@ -1,14 +1,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import {
+  getProductColor,
+  getProductColorLabel,
+  isValidProductColorKey,
+} from "@/lib/productColors";
 
 export type ColorVariant = {
   product_id: string;
   label: string;
+  color_key?: string;
+  hex?: string;
 };
 
 export const colorGroupMemberSchema = z.object({
   productId: z.string().uuid(),
-  label: z.string().trim().min(1, "Oznaka je obavezna."),
+  colorKey: z
+    .string()
+    .trim()
+    .min(1, "Boja je obavezna.")
+    .refine(isValidProductColorKey, "Odabrana boja nije valjana."),
 });
 
 export const colorGroupBodySchema = z.object({
@@ -19,17 +30,22 @@ export const colorGroupBodySchema = z.object({
 export type ColorGroupMemberInput = z.infer<typeof colorGroupMemberSchema>;
 export type ColorGroupBody = z.infer<typeof colorGroupBodySchema>;
 
-export function validateUniqueLabels(members: ColorGroupMemberInput[]): string | null {
-  const labels = members.map((m) => m.label.trim().toLowerCase());
-  const unique = new Set(labels);
-  if (unique.size !== labels.length) {
-    return "Oznake unutar grupe moraju biti jedinstvene.";
+export function validateUniqueColorKeys(members: ColorGroupMemberInput[]): string | null {
+  const colorKeys = members.map((m) => m.colorKey.trim().toLowerCase());
+  const unique = new Set(colorKeys);
+  if (unique.size !== colorKeys.length) {
+    return "Svaka boja u grupi mora biti jedinstvena.";
   }
   const productIds = members.map((m) => m.productId);
   if (new Set(productIds).size !== productIds.length) {
     return "Svaki proizvod smije biti u grupi samo jednom.";
   }
   return null;
+}
+
+/** @deprecated Use validateUniqueColorKeys */
+export function validateUniqueLabels(members: ColorGroupMemberInput[]): string | null {
+  return validateUniqueColorKeys(members);
 }
 
 export async function fetchColorVariantsForProduct(
@@ -48,7 +64,7 @@ export async function fetchColorVariantsForProduct(
 
   const { data: members, error: membersError } = await supabase
     .from("product_color_group_members")
-    .select("product_id, label")
+    .select("product_id, label, color_key")
     .eq("group_id", membership.group_id)
     .order("position", { ascending: true });
 
@@ -56,10 +72,15 @@ export async function fetchColorVariantsForProduct(
     return undefined;
   }
 
-  return members.map((m) => ({
-    product_id: m.product_id,
-    label: m.label,
-  }));
+  return members.map((m) => {
+    const color = getProductColor(m.color_key);
+    return {
+      product_id: m.product_id,
+      label: color?.name ?? m.label,
+      ...(m.color_key ? { color_key: m.color_key } : {}),
+      ...(color ? { hex: color.hex } : {}),
+    };
+  });
 }
 
 export async function replaceColorGroupMembers(
@@ -91,7 +112,8 @@ export async function replaceColorGroupMembers(
   const rows = members.map((member, index) => ({
     group_id: groupId,
     product_id: member.productId,
-    label: member.label.trim(),
+    color_key: member.colorKey.trim(),
+    label: getProductColorLabel(member.colorKey),
     position: index + 1,
   }));
 

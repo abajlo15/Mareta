@@ -81,6 +81,10 @@ export default function ProductDetailPage() {
   );
   const mainImage = images[selectedImageIndex] || images[0];
   const mainImageSettings = getImageSettings(product.image_settings, mainImage);
+  const detailImageSettings = {
+    ...mainImageSettings,
+    zoom: Math.max(mainImageSettings.zoom, 1),
+  };
   const hasMultipleImages = images.length > 1;
   const productHasDiscount = hasDiscount(product.discount_percentage);
   const discountedPrice = calculateDiscountedPrice(product.price, product.discount_percentage);
@@ -114,10 +118,15 @@ export default function ProductDetailPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <div className="relative w-full h-96 mb-4">
+          <div className="relative w-full h-96 mb-4 overflow-hidden rounded-lg">
             {productHasDiscount && (
               <span className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-red-600 text-white text-sm font-bold shadow">
                 AKCIJA -{discountPercentage}%
+              </span>
+            )}
+            {product.is_polarized && (
+              <span className="absolute top-3 right-3 z-10 px-3 py-1 rounded-full bg-primary-600 text-white text-sm font-semibold shadow">
+                Polarizirano
               </span>
             )}
             {hasMultipleImages && (
@@ -146,9 +155,8 @@ export default function ProductDetailPage() {
             <PositionedCoverImage
               src={mainImage}
               alt={product.name}
-              settings={mainImageSettings}
+              settings={detailImageSettings}
               preset="productCard"
-              className="rounded-lg"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
@@ -162,6 +170,9 @@ export default function ProductDetailPage() {
           />
           {visibleCategories.length > 0 && (
             <p className="text-gray-600 mb-4">Kolekcija: {visibleCategories.join(", ")}</p>
+          )}
+          {product.is_polarized && (
+            <p className="text-gray-600 mb-4 font-medium">Polarizirane leće</p>
           )}
           <div className="mb-4">
             {productHasDiscount && (

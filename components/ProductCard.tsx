@@ -32,6 +32,15 @@ export default function ProductCard({ product }: ProductCardProps) {
               AKCIJA -{discountPercentage}%
             </span>
           )}
+          {product.is_polarized && (
+            <span
+              className={`absolute left-3 z-10 px-2 py-1 rounded-full bg-primary-600 text-white text-xs font-semibold shadow ${
+                productHasDiscount ? 'top-11' : 'top-3'
+              }`}
+            >
+              Polarizirano
+            </span>
+          )}
           <PositionedCoverImage
             src={imageUrl}
             alt={product.name}

@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import {
   colorGroupBodySchema,
   replaceColorGroupMembers,
-  validateUniqueLabels,
+  validateUniqueColorKeys,
 } from "@/lib/productColorGroups";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { data: group, error } = await supabase
     .from("product_color_groups")
     .select(
-      "id, name, created_at, members:product_color_group_members(product_id, label, position, product:products(id, name, images))"
+      "id, name, created_at, members:product_color_group_members(product_id, label, color_key, position, product:products(id, name, images))"
     )
     .eq("id", id)
     .maybeSingle();
@@ -35,6 +35,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       (member: {
         product_id: string;
         label: string;
+        color_key: string | null;
         position: number;
         product: { id: string; name: string; images: string[] | null }[] | {
           id: string;
@@ -48,6 +49,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
         return {
           product_id: member.product_id,
           label: member.label,
+          color_key: member.color_key,
           position: member.position,
           product_name: product?.name ?? "",
           product_image: product?.images?.[0] ?? null,
@@ -84,9 +86,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     );
   }
 
-  const labelError = validateUniqueLabels(parsed.data.members);
-  if (labelError) {
-    return NextResponse.json({ error: labelError }, { status: 400 });
+  const colorKeyError = validateUniqueColorKeys(parsed.data.members);
+  if (colorKeyError) {
+    return NextResponse.json({ error: colorKeyError }, { status: 400 });
   }
 
   const { data: existing, error: existingError } = await supabase

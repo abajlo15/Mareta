@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ColorSelect from "@/components/ColorSelect";
+import ColorSwatch from "@/components/ColorSwatch";
+import { getProductColor, matchProductColorFromLabel } from "@/lib/productColors";
 
 type ProductOption = {
   id: string;
@@ -12,6 +15,7 @@ type ProductOption = {
 type GroupMember = {
   product_id: string;
   label: string;
+  color_key: string | null;
   position: number;
   product_name: string;
   product_image: string | null;
@@ -24,15 +28,14 @@ type ColorGroup = {
   members: GroupMember[];
 };
 
-type MemberDraft = {
-  productId: string;
-  label: string;
-};
-
 type ColorGroupsManagerProps = {
   groups: ColorGroup[];
   products: ProductOption[];
 };
+
+function memberDisplayLabel(member: GroupMember): string {
+  return getProductColor(member.color_key ?? undefined)?.name ?? member.label;
+}
 
 export default function ColorGroupsManager({
   groups: initialGroups,
@@ -48,7 +51,7 @@ export default function ColorGroupsManager({
   const [groupName, setGroupName] = useState("");
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [colorKeys, setColorKeys] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
@@ -66,7 +69,7 @@ export default function ColorGroupsManager({
     setGroupName("");
     setSearch("");
     setSelectedIds([]);
-    setLabels({});
+    setColorKeys({});
     setMessage(null);
   };
 
@@ -80,11 +83,18 @@ export default function ColorGroupsManager({
     setSearch("");
     const ids = group.members.map((m) => m.product_id);
     setSelectedIds(ids);
-    const nextLabels: Record<string, string> = {};
+    const nextColorKeys: Record<string, string> = {};
     for (const member of group.members) {
-      nextLabels[member.product_id] = member.label;
+      if (member.color_key) {
+        nextColorKeys[member.product_id] = member.color_key;
+      } else {
+        const matched = matchProductColorFromLabel(member.label);
+        if (matched) {
+          nextColorKeys[member.product_id] = matched.key;
+        }
+      }
     }
-    setLabels(nextLabels);
+    setColorKeys(nextColorKeys);
     setMessage(null);
   };
 
@@ -92,40 +102,36 @@ export default function ColorGroupsManager({
     setSelectedIds((current) => {
       if (current.includes(productId)) {
         const next = current.filter((id) => id !== productId);
-        setLabels((prev) => {
+        setColorKeys((prev) => {
           const copy = { ...prev };
           delete copy[productId];
           return copy;
         });
         return next;
       }
-      const product = products.find((p) => p.id === productId);
-      setLabels((prev) => ({
-        ...prev,
-        [productId]: prev[productId] ?? product?.name ?? "",
-      }));
       return [...current, productId];
     });
   };
 
-  const updateLabel = (productId: string, label: string) => {
-    setLabels((prev) => ({ ...prev, [productId]: label }));
+  const updateColorKey = (productId: string, colorKey: string) => {
+    setColorKeys((prev) => ({ ...prev, [productId]: colorKey }));
   };
+
+  const usedColorKeys = useMemo(
+    () => Object.values(colorKeys).filter(Boolean),
+    [colorKeys]
+  );
 
   const validateForm = (): string | null => {
     if (selectedIds.length < 2) {
       return "Odaberi barem 2 proizvoda u grupi.";
     }
-    const members: MemberDraft[] = selectedIds.map((productId) => ({
-      productId,
-      label: (labels[productId] ?? "").trim(),
-    }));
-    if (members.some((m) => !m.label)) {
-      return "Svaki odabrani proizvod mora imati oznaku u izborniku.";
+    if (selectedIds.some((productId) => !colorKeys[productId]?.trim())) {
+      return "Svaki odabrani proizvod mora imati odabranu boju.";
     }
-    const labelSet = new Set(members.map((m) => m.label.toLowerCase()));
-    if (labelSet.size !== members.length) {
-      return "Oznake unutar grupe moraju biti jedinstvene.";
+    const keys = selectedIds.map((productId) => colorKeys[productId].trim().toLowerCase());
+    if (new Set(keys).size !== keys.length) {
+      return "Svaka boja u grupi mora biti jedinstvena.";
     }
     return null;
   };
@@ -142,7 +148,7 @@ export default function ColorGroupsManager({
 
     const members = selectedIds.map((productId) => ({
       productId,
-      label: labels[productId].trim(),
+      colorKey: colorKeys[productId].trim(),
     }));
 
     setIsSubmitting(true);
@@ -250,10 +256,20 @@ export default function ColorGroupsManager({
                     <p className="font-medium text-slate-900">
                       {group.name || "Grupa bez naziva"}
                     </p>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {group.members.length} proizvoda:{" "}
-                      {group.members.map((m) => m.label).join(", ")}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {group.members.map((member) => (
+                        <span
+                          key={member.product_id}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700"
+                        >
+                          <ColorSwatch
+                            colorKey={member.color_key}
+                            hex={getProductColor(member.color_key ?? undefined)?.hex}
+                          />
+                          {memberDisplayLabel(member)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -268,7 +284,8 @@ export default function ColorGroupsManager({
                       onClick={() =>
                         handleDelete(
                           group.id,
-                          group.name || group.members.map((m) => m.label).join(", ")
+                          group.name ||
+                            group.members.map((m) => memberDisplayLabel(m)).join(", ")
                         )
                       }
                       disabled={deletingId === group.id}
@@ -293,8 +310,8 @@ export default function ColorGroupsManager({
             {editingId ? "Uredi grupu boja" : "Nova grupa boja"}
           </h3>
           <p className="text-sm text-slate-600 mt-1">
-            Odaberi proizvode različitih boja i za svaki postavi oznaku koja se prikazuje u
-            padajućem izborniku na stranici proizvoda (npr. „Lora – žuta“).
+            Odaberi proizvode različitih boja i za svaki odaberi boju koja se prikazuje u
+            padajućem izborniku na stranici proizvoda.
           </p>
         </div>
 
@@ -377,19 +394,18 @@ export default function ColorGroupsManager({
         {selectedProducts.length > 0 && (
           <div className="space-y-3">
             <label className="block text-sm font-medium text-slate-700">
-              Oznake u izborniku ({selectedProducts.length} odabrano)
+              Boje u izborniku ({selectedProducts.length} odabrano)
             </label>
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-sm text-slate-600 sm:w-1/3 break-words">
                   {product.name}
                 </span>
-                <input
-                  type="text"
-                  value={labels[product.id] ?? ""}
-                  onChange={(e) => updateLabel(product.id, e.target.value)}
-                  placeholder="npr. Lora – žuta"
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                <ColorSelect
+                  value={colorKeys[product.id] ?? ""}
+                  onChange={(colorKey) => updateColorKey(product.id, colorKey)}
+                  usedKeys={usedColorKeys}
+                  className="flex-1"
                 />
               </div>
             ))}

@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import {
   colorGroupBodySchema,
   replaceColorGroupMembers,
-  validateUniqueLabels,
+  validateUniqueColorKeys,
 } from "@/lib/productColorGroups";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -14,7 +14,7 @@ export async function GET() {
   const { data: groups, error: groupsError } = await supabase
     .from("product_color_groups")
     .select(
-      "id, name, created_at, members:product_color_group_members(product_id, label, position, product:products(id, name, images))"
+      "id, name, created_at, members:product_color_group_members(product_id, label, color_key, position, product:products(id, name, images))"
     )
     .order("created_at", { ascending: false });
 
@@ -28,6 +28,7 @@ export async function GET() {
         (member: {
           product_id: string;
           label: string;
+          color_key: string | null;
           position: number;
           product: { id: string; name: string; images: string[] | null }[] | {
             id: string;
@@ -41,6 +42,7 @@ export async function GET() {
           return {
             product_id: member.product_id,
             label: member.label,
+            color_key: member.color_key,
             position: member.position,
             product_name: product?.name ?? "",
             product_image: product?.images?.[0] ?? null,
@@ -79,9 +81,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const labelError = validateUniqueLabels(parsed.data.members);
-  if (labelError) {
-    return NextResponse.json({ error: labelError }, { status: 400 });
+  const colorKeyError = validateUniqueColorKeys(parsed.data.members);
+  if (colorKeyError) {
+    return NextResponse.json({ error: colorKeyError }, { status: 400 });
   }
 
   const name =

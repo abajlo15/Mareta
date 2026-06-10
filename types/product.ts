@@ -51,6 +51,8 @@ export interface Product {
   color_variants?: {
     product_id: string;
     label: string;
+    color_key?: string;
+    hex?: string;
   }[];
 }
 
