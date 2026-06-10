@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import type { OrderInsert, OrderItemInsert } from '@/types/order';
@@ -147,8 +148,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: stockError }, { status: 400 });
     }
 
+    const supabaseAdmin = createAdminClient();
+
     // Create order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert([
         {
@@ -185,18 +188,18 @@ export async function POST(request: NextRequest) {
       size: item.size ?? null,
     }));
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await supabaseAdmin
       .from('order_items')
       .insert(orderItems);
 
     if (itemsError) {
       // Rollback order creation
-      await supabase.from('orders').delete().eq('id', order.id);
+      await supabaseAdmin.from('orders').delete().eq('id', order.id);
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
     // Fetch complete order with items
-    const { data: completeOrder, error: fetchError } = await supabase
+    const { data: completeOrder, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select(`
         *,

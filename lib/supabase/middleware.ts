@@ -36,18 +36,18 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Only redirect to login for protected routes
+  const pathname = request.nextUrl.pathname;
   const protectedPaths = ['/checkout', '/orders', '/admin'];
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  );
-  const isGuestCheckoutPath =
-    request.nextUrl.pathname.startsWith('/checkout') &&
-    request.nextUrl.searchParams.get('guest') === '1';
+  const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
+  const isGuestCheckoutAllowed =
+    pathname.startsWith('/checkout/success') ||
+    pathname.startsWith('/checkout/payment') ||
+    (pathname === '/checkout' && request.nextUrl.searchParams.get('guest') === '1');
 
   if (
     !user &&
     isProtectedPath &&
-    !isGuestCheckoutPath &&
+    !isGuestCheckoutAllowed &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/api/auth')
   ) {

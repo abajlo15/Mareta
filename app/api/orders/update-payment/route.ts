@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { syncOrderToBoxNow } from '@/lib/boxnow-sync';
 
@@ -25,7 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: existingOrder, error: findOrderError } = await supabase
+    const supabaseAdmin = createAdminClient();
+
+    const { data: existingOrder, error: findOrderError } = await supabaseAdmin
       .from('orders')
       .select('id,user_id,shipping_provider,boxnow_payment_mode')
       .eq('id', orderId)
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const nextStatus = shouldKeepPendingForBoxNowCod ? 'pending' : 'paid';
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('orders')
       .update({
         payment_intent_id: paymentIntentId ?? 'cod-confirmed',
@@ -59,9 +62,9 @@ export async function POST(request: NextRequest) {
       .eq('id', orderId);
 
     if (user) {
-      query = query.eq('user_id', user.id); // user owns order
+      query = query.eq('user_id', user.id);
     } else {
-      query = query.is('user_id', null); // guest order
+      query = query.is('user_id', null);
     }
 
     const { error } = await query;

@@ -38,8 +38,7 @@ export const ADMIN_PRODUCT_RELATIONS_NO_POSITION = `${subcollectionEmbed(
 export const SUBCOLLECTION_EMBED_MINIMAL = subcollectionEmbed("id, name");
 
 /** Literal select strings for Supabase type inference (no template interpolation in .select()). */
-export const DISCOUNTS_PRODUCTS_SELECT =
-  "id, name, categories, images, subcollection_id, subcollection:subcollections!products_subcollection_id_fkey(id, name)" as const;
+export const DISCOUNTS_PRODUCTS_SELECT = "id, name, images" as const;
 
 export const PRODUCT_DETAIL_SELECT =
   "*, product_sizes(size, stock), subcollection:subcollections!products_subcollection_id_fkey(id, name, thumbnail_url, collection_id), product_collections(collection:collections(id, name, slug, thumbnail_url))" as const;
